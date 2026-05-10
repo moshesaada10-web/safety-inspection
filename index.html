@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1117">
+<title>מבדק בטיחות - מ.ס ארזים הנדסה</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+:root{--bg:#0d0f1a;--surface:#161926;--surface2:#1e2235;--border:#2a3050;--accent:#5b8ff9;--accent2:#8b5cf6;--p0:#ef4444;--p0-bg:rgba(239,68,68,0.12);--p0-border:rgba(239,68,68,0.35);--p1:#f59e0b;--p1-bg:rgba(245,158,11,0.12);--p1-border:rgba(245,158,11,0.35);--p2:#3b82f6;--p2-bg:rgba(59,130,246,0.12);--p2-border:rgba(59,130,246,0.35);--success:#10b981;--text:#e2e8f0;--text2:#7c8aaa;--text3:#4a5568;--radius:14px;--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100%}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:calc(10px + var(--st))}
+.topbar-logo{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,0.1)}
+.topbar-info{flex:1;min-width:0}
+.topbar-title{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:10px;color:var(--text2)}
+.topbar-btn{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:16px;padding-bottom:calc(90px + var(--sb))}
+.page.active{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:var(--sb);z-index:50}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;border:none;background:none;color:var(--text3);font-family:'Heebo',sans-serif;transition:color 0.2s}
+.nav-item.active{color:var(--accent)}
+.nav-icon{font-size:22px;margin-bottom:2px}
+.nav-label{font-size:10px;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-header{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px}
+.input,.select,.textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px 14px;font-size:15px;font-family:'Heebo',sans-serif;color:var(--text);direction:rtl;appearance:none;transition:border-color 0.2s}
+.input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--accent)}
+.textarea{min-height:72px;resize:vertical;line-height:1.5}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:var(--radius);font-size:15px;font-weight:700;font-family:'Heebo',sans-serif;cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s}
+.btn:active{transform:scale(0.97);opacity:0.85}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:white}
+.btn-outline{background:var(--surface2);border:1.5px solid var(--border);color:var(--text2)}
+.btn-sm{padding:10px 14px;font-size:13px;width:auto}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.stat-num{font-size:26px;font-weight:900;line-height:1}
+.stat-lbl{font-size:10px;color:var(--text2);margin-top:3px;font-weight:600}
+.hazard-card{background:var(--surface);border-radius:var(--radius);margin-bottom:10px;border-right:4px solid;overflow:hidden}
+.hazard-card.p0{border-color:var(--p0)}.hazard-card.p1{border-color:var(--p1)}.hazard-card.p2{border-color:var(--p2)}
+.hazard-top{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 8px}
+.hazard-badge{font-size:11px;font-weight:800;padding:4px 8px;border-radius:6px;flex-shrink:0;margin-top:1px}
+.hazard-badge.p0{background:var(--p0-bg);color:var(--p0);border:1px solid var(--p0-border)}
+.hazard-badge.p1{background:var(--p1-bg);color:var(--p1);border:1px solid var(--p1-border)}
+.hazard-badge.p2{background:var(--p2-bg);color:var(--p2);border:1px solid var(--p2-border)}
+.hazard-body{flex:1;min-width:0}
+.hazard-text{font-size:13px;line-height:1.4;font-weight:500}
+.hazard-meta{font-size:11px;color:var(--text2);margin-top:4px}
+.hazard-img{width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.hazard-actions{display:flex;gap:8px;padding:0 12px 10px}
+.hazard-act-btn{flex:1;padding:7px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Heebo',sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2)}
+.hazard-act-del{color:var(--p0);border-color:var(--p0-border);background:var(--p0-bg)}
+.priority-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prio-btn{padding:14px 6px;border-radius:12px;text-align:center;cursor:pointer;border:2px solid;transition:all 0.15s;font-family:'Heebo',sans-serif}
+.prio-btn .pn{font-size:26px;font-weight:900;display:block;line-height:1;margin-bottom:4px}
+.prio-btn .pl{font-size:10px;font-weight:600}
+.prio-btn.p0{background:var(--p0-bg);border-color:var(--p0-border);color:var(--p0)}
+.prio-btn.p1{background:var(--p1-bg);border-color:var(--p1-border);color:var(--p1)}
+.prio-btn.p2{background:var(--p2-bg);border-color:var(--p2-border);color:var(--p2)}
+.prio-btn.p0.sel{border-color:var(--p0);box-shadow:0 0 0 3px rgba(239,68,68,0.25)}
+.prio-btn.p1.sel{border-color:var(--p1);box-shadow:0 0 0 3px rgba(245,158,11,0.25)}
+.prio-btn.p2.sel{border-color:var(--p2);box-shadow:0 0 0 3px rgba(59,130,246,0.25)}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text2);pointer-events:none}
+.search-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:13px 42px 13px 14px;font-size:15px;font-family:'Heebo',sans-serif;color:var(--text);direction:rtl}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.results-list{max-height:260px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);background:var(--surface2)}
+.result-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.result-item:last-child{border-bottom:none}
+.result-item:active,.result-item.sel{background:rgba(91,143,249,0.12)}
+.result-item.other-item{background:rgba(245,158,11,0.07);border-bottom:1.5px solid var(--p1-border)}
+.result-item.other-item:active,.result-item.other-item.sel{background:rgba(245,158,11,0.2);border-bottom-color:var(--p1)}
+.result-item.other-item .result-num{color:var(--p1);font-size:12px}
+.result-item.other-item .result-text{color:var(--text2);font-size:12px}
+.result-num{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.result-text{font-size:13px;line-height:1.4}
+.result-chapter{font-size:10px;color:var(--text2);margin-top:3px}
+.no-results{padding:24px;text-align:center;color:var(--text2);font-size:13px}
+.photo-area{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;color:var(--text2);font-size:14px;transition:border-color 0.2s}
+.photo-area:active{border-color:var(--accent)}
+.photo-preview-wrap{position:relative;display:inline-block;margin-top:10px}
+.photo-preview{max-width:100%;max-height:160px;border-radius:10px;display:block}
+.photo-remove{position:absolute;top:-8px;right:-8px;width:24px;height:24px;background:var(--p0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:white}
+.sel-finding{background:rgba(91,143,249,0.1);border:1.5px solid rgba(91,143,249,0.3);border-radius:10px;padding:12px;margin-bottom:14px}
+.sel-finding-label{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px;text-transform:uppercase}
+.sel-finding-text{font-size:13px;line-height:1.4}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:flex-end}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;width:100%;max-height:92vh;overflow-y:auto;padding:20px 16px;padding-bottom:calc(20px + var(--sb))}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{font-size:20px;color:var(--text2);cursor:pointer;padding:4px}
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:44px;margin-bottom:10px}
+.empty-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.empty-sub{font-size:13px}
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer}
+.history-item:active{border-color:var(--accent)}
+.history-item-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.history-item-sub{font-size:12px;color:var(--text2);margin-bottom:8px}
+.history-badges{display:flex;gap:6px;flex-wrap:wrap}
+.hbadge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px}
+.hbadge.p0{background:var(--p0-bg);color:var(--p0)}.hbadge.p1{background:var(--p1-bg);color:var(--p1)}.hbadge.p2{background:var(--p2-bg);color:var(--p2)}.hbadge.total{background:var(--surface2);color:var(--text2)}
+.history-del{float:left;font-size:18px;color:var(--text3);padding:4px}
+/* presented inspections checklist */
+.pres-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.pres-row:first-child{padding-top:2px}
+.pres-row:last-child{border-bottom:none;padding-bottom:2px}
+.pres-label{flex:1;font-size:13px;line-height:1.35;min-width:0}
+.pres-btns{display:flex;gap:6px;flex-shrink:0}
+.pres-btn{padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap;transition:all 0.15s}
+.pres-btn:active{transform:scale(0.95)}
+.pres-btn.yes.sel{background:rgba(16,185,129,0.15);border-color:var(--success);color:var(--success)}
+.pres-btn.no.sel{background:var(--p0-bg);border-color:var(--p0);color:var(--p0)}
+/* priority section headers in summary */
+.prio-section-title{font-size:14px;font-weight:800;padding:8px 12px;border-radius:8px;margin:12px 0 8px;display:flex;align-items:center;gap:8px}
+.prio-section-title.p0{background:var(--p0-bg);color:var(--p0);border:1px solid var(--p0-border)}
+.prio-section-title.p1{background:var(--p1-bg);color:var(--p1);border:1px solid var(--p1-border)}
+.prio-section-title.p2{background:var(--p2-bg);color:var(--p2);border:1px solid var(--p2-border)}
+@media print{
+  @page{margin:12mm;size:A4}
+  html,body{overflow:visible!important;height:auto!important;background:white!important;color:black!important}
+  .app{height:auto;overflow:visible}
+  .topbar,.bottom-nav{display:none!important}
+  .content{overflow:visible!important}
+  .page{display:none!important;padding:0}
+  #print-doc{display:block!important}
+}
+#print-doc{display:none}
+/* Print doc styles */
+.pdoc{font-family:'Heebo',sans-serif;direction:rtl;color:#1a1a2e;background:white}
+.pdoc-header{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#1e2a6a,#2d3a8c);color:white;padding:18px 24px;border-radius:12px;margin-bottom:20px}
+.pdoc-header-logo{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.3);flex-shrink:0}
+.pdoc-header-text{flex:1}
+.pdoc-header h1{font-size:18px;font-weight:900;margin-bottom:2px}
+.pdoc-header p{font-size:11px;opacity:0.85}
+.pdoc-section{margin-bottom:20px}
+.pdoc-section-title{font-size:14px;font-weight:800;color:#1e2a6a;border-bottom:2px solid #1e2a6a;padding-bottom:6px;margin-bottom:12px}
+.pdoc-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+.pdoc-info-item{font-size:12px}
+.pdoc-info-label{font-weight:700;color:#666}
+.pdoc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.pdoc-stat{text-align:center;padding:12px 6px;border-radius:8px;font-weight:700}
+.pdoc-stat .n{font-size:28px;font-weight:900;display:block}
+.pdoc-stat .l{font-size:10px;margin-top:2px}
+.pdoc-stat.s0{background:#fef2f2;color:#dc2626}.pdoc-stat.s1{background:#fffbeb;color:#d97706}.pdoc-stat.s2{background:#eff6ff;color:#2563eb}.pdoc-stat.st{background:#f0fdf4;color:#16a34a}
+.pdoc-prio-header{padding:8px 12px;border-radius:6px;font-size:13px;font-weight:800;margin:16px 0 8px;page-break-after:avoid}
+.pdoc-prio-header.p0{background:#fef2f2;color:#dc2626;border-right:4px solid #dc2626}
+.pdoc-prio-header.p1{background:#fffbeb;color:#d97706;border-right:4px solid #d97706}
+.pdoc-prio-header.p2{background:#eff6ff;color:#2563eb;border-right:4px solid #2563eb}
+.pdoc-hazard{border-right:4px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#f8f9ff;page-break-inside:avoid}
+.pdoc-hazard.p0{border-color:#dc2626}.pdoc-hazard.p1{border-color:#d97706}.pdoc-hazard.p2{border-color:#2563eb}
+.pdoc-hrow{display:flex;gap:10px;align-items:flex-start}
+.pdoc-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:5px;flex-shrink:0;margin-top:2px}
+.pdoc-badge.p0{background:#fef2f2;color:#dc2626}.pdoc-badge.p1{background:#fffbeb;color:#d97706}.pdoc-badge.p2{background:#eff6ff;color:#2563eb}
+.pdoc-hbody{flex:1}
+.pdoc-htext{font-size:12px;line-height:1.5;font-weight:500}
+.pdoc-hmeta{font-size:10px;color:#666;margin-top:3px}
+.pdoc-himg{width:60px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0}
+.pdoc-notes-box{background:#f8f9ff;border-radius:8px;padding:12px;font-size:12px;line-height:1.6}
+.pdoc-pres-table{width:100%;border-collapse:collapse}
+.pdoc-pres-table td{padding:7px 10px;border-bottom:1px solid #e5e7eb;font-size:12px}
+.pdoc-pres-table tr:last-child td{border-bottom:none}
+.pdoc-pres-yes{color:#16a34a;font-weight:700}
+.pdoc-pres-no{color:#dc2626;font-weight:700}
+.pdoc-pres-none{color:#999}
+.pdoc-footer{text-align:center;font-size:10px;color:#999;margin-top:30px;border-top:1px solid #eee;padding-top:10px}
+.pdoc-company{text-align:center;font-size:11px;font-weight:700;color:#1e2a6a;margin-top:6px}
+/* login screen */
+.login-wrap{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500;padding:24px;padding-top:calc(24px + var(--st));padding-bottom:calc(24px + var(--sb))}
+.login-box{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 22px;text-align:center}
+.login-logo{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:block;object-fit:cover;border:2px solid rgba(91,143,249,0.3)}
+.login-title{font-size:20px;font-weight:800;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:22px}
+.login-field{margin-bottom:12px;text-align:right}
+.login-error{background:var(--p0-bg);border:1px solid var(--p0-border);color:var(--p0);padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none}
+.login-error.show{display:block}
+/* sync badge */
+.sync-badge{font-size:10px;padding:3px 7px;border-radius:5px;margin-right:6px;display:inline-flex;align-items:center;gap:3px;background:var(--surface2);color:var(--text2)}
+.sync-badge.syncing{background:rgba(245,158,11,0.15);color:var(--p1)}
+.sync-badge.synced{background:rgba(16,185,129,0.15);color:var(--success)}
+.sync-badge.error{background:var(--p0-bg);color:var(--p0)}
+.logout-btn{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:4px 8px;font-family:'Heebo',sans-serif}
+.loader{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fullscreen-loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:400;gap:14px}
+.fullscreen-loader .loader{width:32px;height:32px;border-width:3px}
+.fullscreen-loader .msg{font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="fullscreen-loader" id="boot-loader">
+  <div class="loader"></div>
+  <div class="msg">טוען...</div>
+</div>
+
+<div class="login-wrap" id="login-screen" style="display:none">
+  <div class="login-box">
+    <img class="login-logo" id="login-logo-img" src="" alt="לוגו">
+    <div class="login-title">מבדק בטיחות</div>
+    <div class="login-sub">מ.ס ארזים הנדסה בע"מ</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field"><label class="label">אימייל</label><input class="input" id="login-email" type="email" autocomplete="username" dir="ltr" style="text-align:left"></div>
+    <div class="login-field"><label class="label">סיסמה</label><input class="input" id="login-password" type="password" autocomplete="current-password" dir="ltr" style="text-align:left"></div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">התחבר</button>
+  </div>
+</div>
+
+<div class="app" id="app-main" style="display:none">
+  <div class="topbar">
+    <img class="topbar-logo" id="topbar-logo-img" src="" alt="לוגו">
+    <div class="topbar-info">
+      <div class="topbar-title" id="topbar-title">דוח מבדק בטיחות מוסדות חינוך</div>
+      <div class="topbar-sub" id="topbar-sub">
+        <span id="sync-badge" class="sync-badge synced">✓ מסונכרן</span>
+        <span id="topbar-sub-text">מ.ס ארזים הנדסה בע"מ</span>
+        <button class="logout-btn" onclick="openPwdModal()">🔑 סיסמה</button>
+        <button class="logout-btn" onclick="doLogout()">התנתק</button>
+      </div>
+    </div>
+    <button class="topbar-btn" onclick="showHistory()">📂 מבדקים</button>
+  </div>
+
+  <div class="content">
+    <div id="page-details" class="page active">
+      <div class="card">
+        <div class="card-header">🏫 פרטי המוסד</div>
+        <div class="field"><label class="label">שם המוסד</label><input class="input" id="f-name" placeholder="בית ספר / גן ילדים..." oninput="autoSave()"></div>
+        <div class="row-2">
+          <div class="field"><label class="label">סמל מוסד</label><input class="input" id="f-code" placeholder="123456" type="number" oninput="autoSave()"></div>
+          <div class="field"><label class="label">סוג מוסד</label>
+            <select class="select" id="f-type" onchange="autoSave()">
+              <option>בית ספר</option><option>גן ילדים</option><option>פנימייה</option><option>כפר נוער</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label class="label">רחוב ומספר</label><input class="input" id="f-street" placeholder="רחוב הרצל 1" oninput="autoSave()"></div>
+        <div class="row-2">
+          <div class="field"><label class="label">שם הרשות</label><input class="input" id="f-auth" placeholder="עיריית..." oninput="autoSave()"></div>
+          <div class="field"><label class="label">תאריך</label><input class="input" id="f-date" type="date" oninput="autoSave()"></div>
+        </div>
+        <div class="field"><label class="label">עורך המבדק</label><input class="input" id="f-inspector" placeholder="שם מלא" oninput="autoSave()"></div>
+      </div>
+      <button class="btn btn-primary" onclick="goToInspect()">התחל / המשך מבדק ←</button>
+    </div>
+
+    <div id="page-inspect" class="page">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="s0" style="color:var(--p0)">0</div><div class="stat-lbl">קדימות 0</div></div>
+        <div class="stat-box"><div class="stat-num" id="s1" style="color:var(--p1)">0</div><div class="stat-lbl">קדימות 1</div></div>
+        <div class="stat-box"><div class="stat-num" id="s2" style="color:var(--p2)">0</div><div class="stat-lbl">קדימות 2</div></div>
+      </div>
+      <button class="btn btn-primary" style="margin-bottom:14px" onclick="openAddModal()">➕ הוסף מפגע</button>
+      <div id="hazards-list"></div>
+    </div>
+
+    <div id="page-summary" class="page">
+      <div class="card" id="summary-header-card"></div>
+      <div id="summary-hazards-list"></div>
+      <div class="card">
+        <div class="card-header">📋 בדיקות שהוצגו</div>
+        <div id="presented-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">📝 הערות כלליות</div>
+        <textarea class="textarea" id="f-notes" placeholder="הערות לדוח..." oninput="autoSave()"></textarea>
+      </div>
+      <button class="btn btn-success" onclick="printReport()" style="margin-bottom:10px">🖨️ ייצא / הדפס דוח PDF</button>
+      <div style="font-size:11px;color:var(--text2);text-align:center;padding:0 20px 8px">בחר "שמור כ-PDF" בתפריט ההדפסה</div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-details" onclick="navTo('details')"><span class="nav-icon">📋</span><span class="nav-label">פרטים</span></button>
+    <button class="nav-item" id="nav-inspect" onclick="navTo('inspect')"><span class="nav-icon">🔍</span><span class="nav-label">מבדק</span></button>
+    <button class="nav-item" id="nav-summary" onclick="navTo('summary')"><span class="nav-icon">📊</span><span class="nav-label">סיכום</span></button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-add">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="mstep1">
+      <div class="modal-title">בחר מפגע מהרשימה<span class="modal-close" onclick="closeModal()">✕</span></div>
+      <div class="search-wrap"><span class="search-icon">🔎</span><input class="search-input" id="msearch" placeholder="חפש לפי מילה..." oninput="doSearch(this.value)" autocomplete="off"></div>
+      <div class="results-list" id="results-list"><div class="no-results">הקלד מילה לחיפוש בסעיפי הרשימה המנחה</div></div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="closeModal()">ביטול</button>
+        <button class="btn btn-primary btn-sm" style="flex:2" onclick="step2()">הבא ←</button>
+      </div>
+    </div>
+    <div id="mstep2" style="display:none">
+      <div class="modal-title">פרטי המפגע<span class="modal-close" onclick="closeModal()">✕</span></div>
+      <div class="sel-finding" id="sel-finding-preview"></div>
+      <div class="field">
+        <div class="label">🚨 קדימות</div>
+        <div class="priority-grid">
+          <div class="prio-btn p0" onclick="selPrio(0)"><span class="pn">0</span><span class="pl">סגירה מידית</span></div>
+          <div class="prio-btn p1" onclick="selPrio(1)"><span class="pn">1</span><span class="pl">הסרה מידית</span></div>
+          <div class="prio-btn p2" onclick="selPrio(2)"><span class="pn">2</span><span class="pl">תוכנית טיפול</span></div>
+        </div>
+      </div>
+      <div class="field"><label class="label">📍 מיקום המפגע</label><input class="input" id="m-loc" placeholder="לדוגמה: חדר מדרגות קומה 2"></div>
+      <div class="field"><label class="label">📝 תיאור נוסף</label><textarea class="textarea" id="m-notes" placeholder="פרט את המפגע..." style="min-height:60px"></textarea></div>
+      <div class="field">
+        <label class="label">📷 תמונה</label>
+        <div class="photo-area" onclick="document.getElementById('photo-file').click()">
+          <div id="photo-placeholder">📷 לחץ לצילום / העלאת תמונה</div>
+          <input type="file" id="photo-file" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+          <div id="photo-wrap" style="display:none" class="photo-preview-wrap">
+            <img id="photo-preview" class="photo-preview">
+            <div class="photo-remove" onclick="removePhoto(event)">✕</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="back1()">← חזור</button>
+        <button class="btn btn-primary btn-sm" style="flex:2" onclick="saveHazard()">שמור מפגע</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-history">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">מבדקים שמורים<span class="modal-close" onclick="document.getElementById('modal-history').classList.add('hidden')">✕</span></div>
+    <div id="history-list"></div>
+    <button class="btn btn-primary" onclick="newInspection()">➕ מבדק חדש</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-pwd">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">שינוי סיסמה<span class="modal-close" onclick="closePwdModal()">✕</span></div>
+    <div class="login-error" id="pwd-error"></div>
+    <div class="field"><label class="label">סיסמה חדשה</label><input class="input" id="pwd-new" type="password" dir="ltr" style="text-align:left" placeholder="לפחות 6 תווים"></div>
+    <div class="field"><label class="label">אישור סיסמה חדשה</label><input class="input" id="pwd-new2" type="password" dir="ltr" style="text-align:left" placeholder="הזן שוב"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="closePwdModal()">ביטול</button>
+      <button class="btn btn-primary btn-sm" style="flex:2" id="pwd-submit" onclick="doChangePwd()">שנה סיסמה</button>
+    </div>
+  </div>
+</div>
+
+<div id="print-doc"></div>
+
+<script>
+const LOGO_SRC = 'data:image/jpeg;base64,/9j/4QC8RXhpZgAASUkqAAgAAAAGABIBAwABAAAAAQAAABoBBQABAAAAVgAAABsBBQABAAAAXgAAACgBAwABAAAAAgAAABMCAwABAAAAAQAAAGmHBAABAAAAZgAAAAAAAABgAAAAAQAAAGAAAAABAAAABgAAkAcABAAAADAyMTABkQcABAAAAAECAwAAoAcABAAAADAxMDABoAMAAQAAAP//AAACoAQAAQAAAPQBAAADoAQAAQAAAPQBAAAAAAAA/+EOEWh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8APD94cGFja2V0IGJlZ2luPSfvu78nIGlkPSdXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQnPz4KPHg6eG1wbWV0YSB4bWxuczp4PSdhZG9iZTpuczptZXRhLyc+CjxyZGY6UkRGIHhtbG5zOnJkZj0naHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyc+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpBdHRyaWI9J2h0dHA6Ly9ucy5hdHRyaWJ1dGlvbi5jb20vYWRzLzEuMC8nPgogIDxBdHRyaWI6QWRzPgogICA8cmRmOlNlcT4KICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0nUmVzb3VyY2UnPgogICAgIDxBdHRyaWI6Q3JlYXRlZD4yMDIzLTAzLTIwPC9BdHRyaWI6Q3JlYXRlZD4KICAgICA8QXR0cmliOkV4dElkPjJkYWJkYzI3LWIwYjktNDczYS1hMDhiLTlmMWY3MTNkYzViZjwvQXR0cmliOkV4dElkPgogICAgIDxBdHRyaWI6RmJJZD41MjUyNjU5MTQxNzk1ODA8L0F0dHJpYjpGYklkPgogICAgIDxBdHRyaWI6VG91Y2hUeXBlPjI8L0F0dHJpYjpUb3VjaFR5cGU+CiAgICA8L3JkZjpsaT4KICAgPC9yZGY6U2VxPgogIDwvQXR0cmliOkFkcz4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6ZGM9J2h0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvJz4KICA8ZGM6dGl0bGU+CiAgIDxyZGY6QWx0PgogICAgPHJkZjpsaSB4bWw6bGFuZz0neC1kZWZhdWx0Jz7XnNeV15LXlSDXodeV16TXmSDXkNeo15bXmdedINeU16DXk9eh15QgLSAyPC9yZGY6bGk+CiAgIDwvcmRmOkFsdD4KICA8L2RjOnRpdGxlPgogPC9yZGY6RGVzY3JpcHRpb24+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpwZGY9J2h0dHA6Ly9ucy5hZG9iZS5jb20vcGRmLzEuMy8nPgogIDxwZGY6QXV0aG9yPtee15nXm9ecINeh16LXk9eUPC9wZGY6QXV0aG9yPgogPC9yZGY6RGVzY3JpcHRpb24+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczp4bXA9J2h0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8nPgogIDx4bXA6Q3JlYXRvclRvb2w+Q2FudmE8L3htcDpDcmVhdG9yVG9vbD4KIDwvcmRmOkRlc2NyaXB0aW9uPgo8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSd3Jz8+/9sAQwAGBAUGBQQGBgUGBwcGCAoQCgoJCQoUDg8MEBcUGBgXFBYWGh0lHxobIxwWFiAsICMmJykqKRkfLTAtKDAlKCko/9sAQwEHBwcKCAoTCgoTKBoWGigoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgo/8AAEQgB9AH0AwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A+qaKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKQsB1IpNpALRUL3UKEgyDI7Dk/55FRm+hywUliuNwHbJqHVguo1Flqiqcl6AR5cZcHuK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';
+document.getElementById('topbar-logo-img').src = LOGO_SRC;
+
+const FINDINGS=[
+{id:"2.1",ch:"פרק 2 - סביבה חיצונית",t:"לא יהיו בקרבת המוסד מקורות המהווים מפגעי בטיחות, גהות או סיכונים פוטנציאלים (רעש, צחנה, זיהום אוויר, מכלים חשופים של גז, דלק)"},
+{id:"2.2",ch:"פרק 2 - סביבה חיצונית",t:"כאלטרנטיבה, דרכי הגישה האגפית למוסד לא יעברו מבחינה קרינה מהמוסד"},
+{id:"2.3",ch:"פרק 2 - סביבה חיצונית",t:"דרכי הגישה הרגליות למוסד יאפשרו מעבר בטוח ללא סיכונים"},
+{id:"2.4",ch:"פרק 2 - סביבה חיצונית",t:"אם האזור שמחוץ לשער צמוד לכביש, יש להתקין מעקה בטיחות ממתכת בגובה לפחות 1 מ' במקום מוצב פינות בטיחות בבית השידורים"},
+{id:"3.1",ch:"פרק 3 - חצר המוסד / תשתיות",t:"החצר תהיה נקייה ממפגעי בטיחות קבועים או זמניים. לא יישארו מכשולים או פסולת מכל סוג. חלקים בולטים יהיו עם הגנה עליהם"},
+{id:"3.2",ch:"פרק 3 - חצר המוסד / תשתיות",t:"כיסוי חצרות לא יכיל חומרים העלולים לפגוע ולהזיק כאבנים חדות, אבק וכיו\"ב"},
+{id:"3.3",ch:"פרק 3 - חצר המוסד / תשתיות",t:"שטח החצר יהיה ממולא בחול ים, כורכר, סומסומיה, דשא וחומרים נוספים מתאימים (גן ילדים)"},
+{id:"3.4",ch:"פרק 3 - חצר המוסד / תשתיות",t:"לא יהיו מקומות ללא ניקוז מתאים שיאפשרו שלוליות ומים עומדים"},
+{id:"3.5",ch:"פרק 3 - חצר המוסד / תשתיות",t:"תאי ביקורת, בריכות הסתעפות, מגופים, צנרת וכד' יהיו בגובה פני הקרקע בלבד"},
+{id:"3.6",ch:"פרק 3 - חצר המוסד / תשתיות",t:"מתקנים והתקנים בחצר העלולים לסכן ילדים יגודרו באופן שימנע גישה אליהם או טיפוס עליהם"},
+{id:"3.7",ch:"פרק 3 - חצר המוסד / תשתיות",t:"לא יוצבו עמודים, אנטנות, יחידות טרנספורמציה, הידראנטים בשטח החצר אלא לצורך הנובע מארגון החצר"},
+{id:"3.8",ch:"פרק 3 - חצר המוסד / תשתיות",t:"לא יחצו קווי חשמל וטלפון עיליים את תחום חצר המוסד החינוכי"},
+{id:"3.9",ch:"פרק 3 - חצר המוסד / תשתיות",t:"מתקן לאיסוף אשפה ימוקם בגבול המגרש, הרחק ככל האפשר מבניין מוסד החינוך ומאזורי תנועה של תלמידים"},
+{id:"3.10",ch:"פרק 3 - חצר המוסד / תשתיות",t:"ברזיות מי-שתייה תותקנה בקרבת שטחי הפעילויות, במקום מוצל ומרוחק ממעברים"},
+{id:"3.11",ch:"פרק 3 - חצר / ארגון",t:"החצר תאורגן באופן שיבטיח בטיחות מרבית בעת תנועה ופעילות של תלמידים"},
+{id:"3.12",ch:"פרק 3 - חצר / ארגון",t:"לא יגודרו עצים או חלקים מהחצר בגדר תיל או בכל צורת גידור העלולה לפגוע בתלמידים"},
+{id:"3.13",ch:"פרק 3 - חצר / ארגון",t:"לא יהיו בחצר מקומות מסתור המקשים על הבקרה ועל השליטה"},
+{id:"3.14",ch:"פרק 3 - חצר / ארגון",t:"בחצר המוסד יהיו אזורים מוצלים המאפשרים בילוי בהפסקות ללא חשיפה לקרינת שמש ישירה"},
+{id:"3.15",ch:"פרק 3 - חצר / ארגון",t:"מתקני משק ומחסנים עם חומרים מסוכנים יצוידו בסידורי נעילה. מבנים שאינם בשימוש יהיו נעולים ומגודרים"},
+{id:"3.16",ch:"פרק 3 - חצר / ארגון",t:"יוגדר שטח לרכב חירום כולל דרך גישה מתאימה ללא מכשולים מהשער המיועד"},
+{id:"3.17",ch:"פרק 3 - חצר / ארגון",t:"מבנה הגן או החצר לא ימצאו מתחת למרפסות, רמפות, גגות, או כל מערכת שתאפשר נפילת גופים"},
+{id:"3.18",ch:"פרק 3 - חצר / ארגון",t:"לא תימצא צמחייה דוקרנית או רעילה. לא ימצאו עצים וענפים המהווים אפשרות קריסה. לא ימצאו קצוות חדים לאחר גיזום"},
+{id:"3.19",ch:"פרק 3 - מפלסים בחצר",t:"הפרש גובה בין מפלסים העולה על 50 ס\"מ ועד 2.5 מ' מחייב התקנת מעקה יציב בגובה 1.10 מטר לפחות"},
+{id:"3.20",ch:"פרק 3 - מפלסים בחצר",t:"מבנה המעקה יקשה אפשרות טיפוס. סורגי המעקה יהיו אנכיים, מרווח לא יותר מ-10 ס\"מ"},
+{id:"3.21",ch:"פרק 3 - שבילים",t:"שביל הגישה לשער הכניסה לבניין לא יפחת מרוחב שער הכניסה כשהוא פתוח לגמרי"},
+{id:"3.22",ch:"פרק 3 - שבילים",t:"השבילים והשטחים בחצר יהיו סלולים או מרוצפים, ללא מהמורות ובליטות, ופניהם מחוספסים למניעת החלקה"},
+{id:"3.23",ch:"פרק 3 - שבילים",t:"שבילי ההליכה והמעברים שבין המפלסים בחצר יהיו בשיפוע מתון"},
+{id:"3.24",ch:"פרק 3 - מדרגות",t:"מספר מדרגות במהלך אחד - לא יפחת מ-3 מדרגות ולא יעלה על 14 מדרגות"},
+{id:"3.25",ch:"פרק 3 - מדרגות",t:"פני המישור העליון של מדרגות חיצוניות ורמפות יהיו מחוספסים למניעת סכנת החלקה"},
+{id:"3.26",ch:"פרק 3 - גדר",t:"הגדר תתנשא לגובה של 2 מ' לפחות מעל פני הקרקע משני צידי הגדר"},
+{id:"3.27",ch:"פרק 3 - גדר",t:"גדר סורגים - הסורגים יהיו אנכיים, במרווחים של לא יותר מ-10 ס\"מ בין מוטות סמוכים ובחוזק הדרוש למניעת כיפופם"},
+{id:"3.28",ch:"פרק 3 - גדר",t:"גדר רשת תהיה מתיל מגולוון או מצופה חומר פלסטי. רוחב משבצות הרשת יהיה 5 ס\"מ לכל היותר"},
+{id:"3.29",ch:"פרק 3 - גדר",t:"המרחק ממשטח הבטון שעליו מותקנת הגדר עד הקצה התחתון של פרופיל הגדר לא יעלה על 10 ס\"מ"},
+{id:"3.30",ch:"פרק 3 - גדר",t:"בכל חלקי הגדר לרבות החלק העליון לא יהיו אלמנטים חדים המהווים סכנת פציעה לילדים"},
+{id:"3.31",ch:"פרק 3 - גדר",t:"גדר חיה אינה יכולה לבוא במקום סוגי הגדרות המפורטים. שיחי הגדר החיה יהיו בלתי-דוקרניים"},
+{id:"3.32",ch:"פרק 3 - שערים",t:"מוסד עד 1,000 איש - יותקנו שני שערים ברוחב 2.2 מ' להולכי רגל ושער רכב חירום ברוחב 4.2 מ'. מעל 1,000 - שער נוסף לכל 1,000 איש"},
+{id:"3.33",ch:"פרק 3 - שערים",t:"פרזול השער יכלול סגר ומנעול הניתנים להפעלה מבפנים ומבחוץ. לא יהיו בליטות אלמנטים מהשער"},
+{id:"3.34",ch:"פרק 3 - שערים",t:"לא ימתח תיל דוקרני ולא יקבעו יתדות בעלי קצוות חדים מעל השער"},
+{id:"3.35",ch:"פרק 3 - שערים",t:"משני צידי השער יהיה מרווח לפחות 4 ס\"מ בכל מצב של השער"},
+{id:"3.36",ch:"פרק 3 - שערים",t:"הגישה מבחוץ אל שער-כניסה אחד לפחות תהיה במישור אופקי או באמצעות רמפה בהתאם לדרישות הנגישות"},
+{id:"3.37",ch:"פרק 3 - שערים",t:"השער יהיה באופן שלא יהיה אפשר לטפס עליו או לזחול מתחתיו. גובהו יהיה 2 מטר"},
+{id:"3.38",ch:"פרק 3 - שערים",t:"אין להתקין שערים דו-כיווניים. לא יותקן שער חשמלי להולכי רגל"},
+{id:"3.39",ch:"פרק 3 - שערים",t:"אין להתקין שערים המאפשרים טיפוס"},
+{id:"3.40",ch:"פרק 3 - חניית רכב ואופניים",t:"שטח החנייה לרכב מנועי לצורכי מוסד החינוך יהיה מחוץ לחצר המוסד"},
+{id:"3.41",ch:"פרק 3 - חניית רכב ואופניים",t:"במקומות שבהם החנייה בתוך חצר בית הספר, תהיה הפרדה על ידי גדר שגובהה לא יפחת מ-1.1 מטר"},
+{id:"3.42",ch:"פרק 3 - חניית רכב ואופניים",t:"שטח לסככת חנייה לאופניים עם גישה ישירה מבחוץ, לא תחצה צירי תנועה של תלמידים"},
+{id:"3.43",ch:"פרק 3 - מתקני משחקים",t:"המתקנים יהיו יציבים"},
+{id:"3.44",ch:"פרק 3 - מתקני משחקים",t:"רכיבי המתקן יהיו שלמים"},
+{id:"3.45",ch:"פרק 3 - מתקני משחקים",t:"לא ימצאו נקודות הילכדות במתקני משחקים"},
+{id:"3.46",ch:"פרק 3 - מתקני משחקים",t:"לא ימצאו נקודות הצבתות במתקני משחקים"},
+{id:"3.47",ch:"פרק 3 - מתקני משחקים",t:"לא תהינה פינות חדות או חלקים בולטים במתקני משחקים"},
+{id:"3.48",ch:"פרק 3 - מתקני משחקים",t:"לא יהיו אזורים נגועים בחלודה במתקני משחקים"},
+{id:"3.49",ch:"פרק 3 - מתקני משחקים",t:"חלקי העץ יהיו חלקים וללא כפיסים העלולים לגרום לפציעה"},
+{id:"3.50",ch:"פרק 3 - מתקני משחקים",t:"השטח שמתחת למתקנים ירופד בשכבת חול או חומר בולם מאושר לפי BS 1177. יכסה גם את נקודות העיגון בקרקע"},
+{id:"3.51",ch:"פרק 3 - מתקני משחקים",t:"ארגז חול - פינות מעוגלות ומסגרת שלמה וללא נזקים. מינימלי שטח חצי מטר מהמבנה, 20% משטח של 25 ס\"מ"},
+{id:"3.52",ch:"פרק 3 - מגרשי ספורט",t:"מגרשי הספורט יהיו תקינים, שלמים, ללא מפגעים"},
+{id:"3.53",ch:"פרק 3 - מגרשי ספורט",t:"המשטח יהיה ללא בליטות, שקעים ומחומרים מונעי החלקה"},
+{id:"3.54",ch:"פרק 3 - מגרשי ספורט",t:"מגרשים הגובלים במדרונות, כבישים או חלקים מזוגגים יגודרו בגדר בגובה מזערי של 4 מ'"},
+{id:"3.55",ch:"פרק 3 - מגרשי ספורט",t:"ישמרו שולים נקיים: כדורגל/קט רגל/כדור עף - 3 מטר, כדורסל - 2 מטר, כדור יד - 2 מ' לרוחב ו-1 מ' לאורך"},
+{id:"3.56",ch:"פרק 3 - מגרשי ספורט",t:"גופי התאורה מעל מגרשי ספורט יהיו מוגנים ברשתות ועשויים מחומרים עמידים בפני מים ובפני התנפצות"},
+{id:"3.57",ch:"פרק 3 - מגרשי ספורט",t:"לא תהיה אפשרות לטפס על העמודים לכדורסל ועל אלמנטים אחרים"},
+{id:"3.58",ch:"פרק 3 - מגרשי ספורט",t:"שערים לכדורגל יהיו יציבים ושלמים"},
+{id:"3.59",ch:"פרק 3 - מגרשי ספורט",t:"מתקני כדורסל-כדורי יהיו יציבים וללא סימני פגיעה"},
+{id:"4.1",ch:"פרק 4 - מניעה",t:"ריהוט, קישוטים וחומרים דליקים אחרים יהיו מרוחקים מגופי חימום"},
+{id:"4.2",ch:"פרק 4 - ציוד כיבוי אש",t:"מיקום עמדות כיבוי אש לא יסכן עוברים. הארונות יהיו שלמים ללא קצוות חדים. פתיחה מהירה בכל מצב"},
+{id:"4.3",ch:"פרק 4 - ציוד כיבוי אש",t:"עמדות כיבוי ישמשו לחירום בלבד ולא לצרכי משק וניקיון"},
+{id:"4.4",ch:"פרק 4 - ציוד כיבוי אש",t:"ציוד הכיבוי ומטפים שלמים ותקינים. בהתאם להוראת מכ\"ר 523, ייבדקו פעם בשנה. בכל מוסד ימצא מערכות גילוי וכיבוי אש"},
+{id:"4.5",ch:"פרק 4 - ציוד כיבוי אש (גן)",t:"בכל גן ילדים יותקנו 2 מטפי אבקה 6 ק\"ג. עמדת כיבוי אש בחזית הכניסה. במרחק עד 90 מ' - ברז כיבוי 2\" או 3\""},
+{id:"4.6",ch:"פרק 4 - מסדרון",t:"המסדרון יהיה פנוי מחדירת אלמנטים של המבנה, לרבות צנרות שונות, בגובה של 2 מ' מפני הרצפה"},
+{id:"4.7",ch:"פרק 4 - מסדרון",t:"רצפת המסדרון תהיה במפלס ישר ואחיד, בלי הפרשי גובה ולא יהיו מדרגות או רמפות בציר התנועה"},
+{id:"4.8",ch:"פרק 4 - חדרי מדרגות",t:"חדרי המדרגות יהיו ללא נזקים ובעלי רום ושלח אחידים"},
+{id:"4.9",ch:"פרק 4 - חדרי מדרגות",t:"קצוות מהלכי המדרגות ומשטחיהן שמצד הקיר חייבים להיות צמודים ללא רווחים בינם לבין הקיר"},
+{id:"4.10",ch:"פרק 4 - חדרי מדרגות",t:"פני השלח יהיו מחוספסים למניעת החלקה"},
+{id:"4.11",ch:"פרק 4 - חדרי מדרגות",t:"בכל חלקי חדר המדרגות, לרבות כניסותיו ויציאותיו, יהיה גובה מזקף הראש לפחות 2.10 מ'"},
+{id:"4.12",ch:"פרק 4 - חדרי מדרגות",t:"בקצה העליון של חלל / של גרם מדרגות יהיו פתחים ליציאת עשן"},
+{id:"4.13",ch:"פרק 4 - הכנה למילוט",t:"דלתות יפתחו כלפי חוץ. גובה הדלת בכניסה לתא השירותים לא יעלה על 2.1 מ'. בחדר עד 10 איש - חריג מותר"},
+{id:"4.14",ch:"פרק 4 - הכנה למילוט",t:"בחלל שתפוסתו 100 איש ומעלה נדרש להתקין מנעול בהלה. בכל כנף - מכלול נעילה למנעול בהלה"},
+{id:"4.15",ch:"פרק 4 - הכנה למילוט",t:"שני פתחי מילוט לפחות בחדר שתפוסתו 50 איש ומעלה"},
+{id:"4.16",ch:"פרק 4 - הכנה למילוט",t:"בקומת הקרקע תהיינה שתי כניסות לפחות שתשמשנה גם פתחי יציאה של מסלולי המילוט"},
+{id:"4.17",ch:"פרק 4 - הכנה למילוט",t:"מסלולי המילוט ישולטו בשלטים סטנדרטיים. מעל כל פתחי מילוט יוצבו שלטי יציאה ותאורת חירום"},
+{id:"4.18",ch:"פרק 4 - הכנה למילוט",t:"אין להציב במסלול המילוט חפצים העלולים לגרוע מרוחב המסלול המינימאלי"},
+{id:"4.19",ch:"פרק 4 - הכנה למילוט",t:"אין לקבוע מסלולי מילוט משותפים עם חללים מסוכנים"},
+{id:"4.20",ch:"פרק 4 - הכנה למילוט",t:"בכל כיתת גן ילדים יהיו שתי כניסות לפחות שתשמשנה גם פתחי מילוט. הרוחב המינימאלי לא יקטן מ-90 ס\"מ"},
+{id:"4.21",ch:"פרק 4 - הכנה למילוט",t:"יש לוודא שקיימות יציאות מילוט מחדרי המגורים, חדרי אוכל, מטבח, אולמות תרבות ומועדונים - הניתנים לפתיחה מבפנים"},
+{id:"4.22",ch:"פרק 4 - הכנה למילוט",t:"מסלולי המילוט ישולטו בשלטים סטנדרטיים. על כל פתחי המילוט, הכניסות לחדרי המדרגות ושערי היציאה - תאורת חירום"},
+{id:"5.1",ch:"פרק 5 - מפגעים קבועים וניידים",t:"עד גובה 2 מ' מהרצפה - לא יבלטו מהקירות כל עצמים. כל חומרי הבנייה יהיו חלקים וחופשיים מכל בליטה. מתקני מעבים יהיו שלמים וללא חלודה"},
+{id:"5.2",ch:"פרק 5 - מפגעים (גן ילדים)",t:"עד גובה 1.5 מ' מהרצפה - לא יבלטו מהקירות כל עצמים. כל חומרי הבנייה יהיו חלקים וחופשיים מכל בליטה"},
+{id:"5.3",ch:"פרק 5 - מפגעים קבועים",t:"מתלי מעילים לא יהיו נמוכים מ-1.80 מטר. במידה והגובה יפחת מ-1.80 מטר יש להתקין מגן"},
+{id:"5.4",ch:"פרק 5 - מפגעים (גן ילדים)",t:"מתלי מעילים לא יהיו נמוכים מ-1.50 מטר. במידה והגובה יפחת מ-1.50 מטר יש להתקין מגן"},
+{id:"5.5",ch:"פרק 5 - מפגעים קבועים",t:"ארונות, ספריות וכונניות יהיו מקובעים למניעת התהפכות"},
+{id:"5.6",ch:"פרק 5 - מפגעים קבועים",t:"דלתות ארונות וויטרינות יהיו מחומר שאינו מתנפץ"},
+{id:"5.7",ch:"פרק 5 - מפגעים קבועים",t:"מצנני מים יהיו מותאמים ויעוגנו לקירות למניעת התהפכות"},
+{id:"5.8",ch:"פרק 5 - מפגעים קבועים",t:"בלוח הכיתה לא יהיו בליטות או פינות חדות"},
+{id:"5.9",ch:"פרק 5 - מפגעים קבועים",t:"אין להציב מראות מזכוכית שבירה במקומות נגישים"},
+{id:"5.10",ch:"פרק 5 - מפגעים קבועים",t:"לא יהיו מפגעי תשתית בבניין ובכיתות: סדקים במבנה, רצפות שקועות, סימני רפיון בתקרות תלויות"},
+{id:"5.11",ch:"פרק 5 - מפגעים קבועים",t:"הריצוף לא יהיה מועד להחלקה, במיוחד בשירותים, מטבח ומקומות לחים"},
+{id:"5.12",ch:"פרק 5 - מפגעים קבועים",t:"אין להציב ציוד הניתן לטיפוס עליו בצמוד למקומות עם הפרשי גובה (חלונות, מעקים)"},
+{id:"5.13",ch:"פרק 5 - חלונות סורגים",t:"חלונות החוץ בחדרי לימוד ייקבעו בגובה סף 1.50 מ' לפחות. אם גובה סף פחות מ-1.5 מ' - המרווח לא יעלה על 10 ס\"מ. חלונות יזוגגו בחומר שאינו מתנפץ"},
+{id:"5.14",ch:"פרק 5 - חלונות סורגים",t:"כנפי החלונות לא יבלטו לתוך הכיתה. לא יבלטו החוצה כאשר סף החלון נמוך מ-2 מטרים"},
+{id:"5.15",ch:"פרק 5 - חלונות סורגים",t:"אין להתקין חלונות גרירה אנכיים"},
+{id:"5.16",ch:"פרק 5 - חלונות סורגים",t:"אין להתקין חלונות חיצוניים מרפפות זכוכית"},
+{id:"5.17",ch:"פרק 5 - חלונות סורגים",t:"בחלונות בקומת קרקע עם סורגים - בכל כיתה לפחות פתח מילוט אחד: 0.80 מ' רוחב, 1.00 מ' גובה. מפתח בקופסת ניפוץ אדומה עם פטישון"},
+{id:"5.18",ch:"פרק 5 - חלונות סורגים",t:"בסורגים - לא תהיה אפשרות טיפוס. מרווח בין השלבים לא יעלה על 10 ס\"מ"},
+{id:"5.19",ch:"פרק 5 - דלתות",t:"דלת הנפתחת לכיוון צירי התנועה: בגומחא - לא תבלוט מעבר ל-18 ס\"מ. ללא גומחא - תיפתח עד 180 מעלות וצמודה לקיר"},
+{id:"5.20",ch:"פרק 5 - דלתות",t:"דלתות הזזה אסורות בחדרים לתפוסה מעל 6 אנשים"},
+{id:"5.21",ch:"פרק 5 - דלתות",t:"כל הדלתות יספקו הגנה מפני פגיעה באצבעות - מגן אצבעות גמיש, רכיב האטת אגף, תפס (מעצור דלת)"},
+{id:"5.22",ch:"פרק 5 - דלתות",t:"אין להתקין דלתות מזוגגות בזכוכית רגילה. יזוגגו בחומר שאינו מתנפץ"},
+{id:"5.23",ch:"פרק 5 - דלתות",t:"הידיות, המנעולים וחיפויים יהיו שלמים, חלקים, מעוגלים וחופשיים מבליטת ברגים ופינים"},
+{id:"5.24",ch:"פרק 5 - דלתות",t:"לא תותקן דלת דו-כיוונית (פנדל)"},
+{id:"5.25",ch:"פרק 5 - דלתות (גן ילדים)",t:"דלת כניסה תהיה ברוחב נקי של 90 ס\"מ. הדלתות יפתחו כלפי חוץ ובזוית של 180 מעלות"},
+{id:"5.26",ch:"פרק 5 - דלתות (גן ילדים)",t:"דלתות תאי השירותים ברוחב מזערי של 60 ס\"מ. בין הרצפה לחלק התחתון - רווח 20 ס\"מ לפחות. ללא אפשרות נעילה מבפנים"},
+{id:"5.27",ch:"פרק 5 - מעקים ומסעד יד",t:"יש להתקין מעקה בגובה 1.10 מ' לפחות בכל מקום שהפרשי הגובה עולים על 50 ס\"מ ובכל מקום שמספר מדרגות עולה על שלוש"},
+{id:"5.28",ch:"פרק 5 - מעקים ומסעד יד",t:"מעל חללים פתוחים מעל 2.5 מ' - מעקה גובה לא יפחת מ-1.2 מ'"},
+{id:"5.29",ch:"פרק 5 - מעקים ומסעד יד",t:"בגגות המשמשים כחצרות פעילים גובה המעקה לא יפחת מ-1.5 מטר"},
+{id:"5.30",ch:"פרק 5 - מעקים ומסעד יד",t:"במעקים עם אלמנטים אנכיים - המרווח ביניהם לא יעלה על 10 ס\"מ ולא יאפשר ישיבה, טיפוס וגלישה"},
+{id:"5.31",ch:"פרק 5 - מעקים ומסעד יד",t:"המעקים יהיו יציבים ומקובעים. לא יהיו שלבים אופקיים מתחת לגובה 90 ס\"מ"},
+{id:"5.32",ch:"פרק 5 - מעקים ומסעד יד",t:"מסעדי יד יותקנו משני צידי מהלך המדרגות. גובהם המזערי 90 ס\"מ"},
+{id:"5.33",ch:"פרק 5 - מעקים ומסעד יד",t:"גובה המעקה מעל חללים פתוחים יהיה 1.20 מטר לפחות ולא יאפשר טיפוס"},
+{id:"5.34",ch:"פרק 5 - מעקים ומסעד יד",t:"המעקה ומסעד-היד ייבנו ברציפות וללא הפסקה לאורך כל מהלך המדרגות"},
+{id:"5.35",ch:"פרק 5 - מעקים ומסעד יד",t:"גובהם המזערי של מסעדי היד יהיה 90 ס\"מ. גובה זה יימדד מקצה אף המדרגה"},
+{id:"5.36",ch:"פרק 5 - מעקים ומסעד יד",t:"רוחב מעקה לא יעלה על 5 ס\"מ ולא יאפשר ישיבה, טיפוס וגלישה"},
+{id:"5.37",ch:"פרק 5 - מעקים ומסעד יד",t:"המעקה ומסעדי-היד ייבנו ברציפות וללא הפסקה לאורך כל מהלך המדרגות"},
+{id:"5.38",ch:"פרק 5 - מעקים ומסעד יד",t:"גובהם המזערי של מסעדי היד לא יפחת מ-90 ס\"מ. המרחק אל בית האחיזה לא יעלה על 75 ס\"מ"},
+{id:"5.39",ch:"פרק 5 - מעקים ומסעד יד",t:"גובה המעקה מעל חללים פתוחים יהיה 1.20 מטר לפחות ולא יאפשר כל טיפוס"},
+{id:"6.1",ch:"פרק 6 - המקלט / שגרה",t:"בזמן שגרה יגברו הוראות הבטיחות תוך כדי מתן אפשרות מהירה לעבור למצב חירום (קיבוע/סורגים על חלונות מילוט, מניעת טיפוס)"},
+{id:"6.2",ch:"פרק 6 - המקלט / שגרה",t:"ניתן להשתמש במקלט באופן שוטף בהתאם להנחיות פיקוד העורף"},
+{id:"6.3",ch:"פרק 6 - המקלט / דרכי גישה",t:"דרכי הגישה אל הכניסות למקלט ואל היציאות ממנו יהיו פנויות, מסומנות ומשולטות, סלולות וחסרות מכשולים"},
+{id:"6.4",ch:"פרק 6 - המקלט / מבנה",t:"חלקי מבנה המקלט לרבות ארובות, ספי כניסה, דלתות פתחי החירום לא יהיו מכשול ולא יאפשרו טיפוס לילדים"},
+{id:"6.5",ch:"פרק 6 - המקלט / חלונות",t:"בחלונות מקלט ומרחב מוגן יהיו הגנות למניעת נפילה שיאפשרו פתיחה בחירום"},
+{id:"6.6",ch:"פרק 6 - המקלט / פתחי חירום",t:"לא יהיו בחלונות פינות חדות, בעיקר בגובה ילדי הגן"},
+{id:"6.7",ch:"פרק 6 - המקלט / פתחי חירום",t:"פתחי החירום של המקלט היוצאים אל שטח החצר יהיו סגורים מבפנים, ולא יבלטו מעל פני השטח"},
+{id:"6.8",ch:"פרק 6 - המקלט / קירות",t:"קירות המקלט, תקרתו ורצפתו, יצופו בחומרים בלתי דליקים"},
+{id:"6.9",ch:"פרק 6 - המקלט / תאורת חירום",t:"קיום תאורת חירום תקינה ומשולטת במקלט"},
+{id:"7.1",ch:"פרק 7 - כיתות חדרים וגן",t:"חומרים, קוביות, ארגזים וכד' - מקומם בפינות רחוקות מן הפתחים, כדי לאפשר מעבר חופשי"},
+{id:"7.2",ch:"פרק 7 - כיתות חדרים וגן",t:"אין לערום חפצים כבדים לגובה רב. במדפים הגבוהים יהיו ערוכים אך ורק חפצים קלים ובלתי שבירים"},
+{id:"7.3",ch:"פרק 7 - כיתות חדרים וגן",t:"שולחנות ופרטי ריהוט אחרים יהיו בעלי פינות מעוגלות, עשויים מחומר לא שביר"},
+{id:"7.4",ch:"פרק 7 - כיתות חדרים וגן",t:"כיסאות בגני ילדים - המרווח בין המושב למשענת לא יעלה על 85 מ\"מ (תקן 709)"},
+{id:"7.5",ch:"פרק 7 - כיתות חדרים וגן",t:"כלים חשמליים (קומקום, מתקנים לחימום מים, מתקני הפעלה לצעצועים) יהיו בעלי בידוד כפול. לא ימצאו מכשירים שאינם שמישים"},
+{id:"7.6",ch:"פרק 7 - כיתות חדרים וגן",t:"תמונות, קישוטים, ארונות יחוברו לקיר למניעת נפילה. קישוטים לא יחוברו לנורות חשמל"},
+{id:"7.7",ch:"פרק 7 - כיתות חדרים וגן",t:"מיטות דו-קומתיות והסולמות יהיו יציבים ומקובעים וללא פינות חדות"},
+{id:"7.8",ch:"פרק 7 - כיתות חדרים וגן (גן)",t:"לא תימצאנה בגן שקיות ניילון העלולות לשמש למשחקי הילדים"},
+{id:"7.9",ch:"פרק 7 - כיתות חדרים וגן",t:"הזגוגיות לרבות מראות - הזיגוג יהיה בחומר שאינו מתנפץ"},
+{id:"7.10",ch:"פרק 7 - המטבח (גן)",t:"מטבח יופרד מחדר הלימוד, וישמש להכנת אוכל"},
+{id:"7.11",ch:"פרק 7 - המטבח (גן)",t:"מתקני הבישול והחימום והכבלים החשמליים ימצאו במקום גבוה, מעבר להישג ידו של הילד"},
+{id:"7.12",ch:"פרק 7 - המטבח (גן)",t:"חימום ובישול בגן ייעשו בכיריים חשמליים או בגז. מיכל הגז יימצא מחוץ לגן, ויהיה מוקף ברשת נעולה"},
+{id:"7.13",ch:"פרק 7 - אחסון חומרי ניקוי (גן)",t:"כל חומרי הניקוי והחיטוי יוחזקו בארון נפרד ונעול. מפתח הארון בידי הגננת ובידי הסייעת בלבד"},
+{id:"7.14",ch:"פרק 7 - עזרה ראשונה (גן)",t:"בגן הילדים ימצא תרמיל עזרה ראשונה בעל תכולה מתאימה (על פי הנחיות חוזר מנכ\"ל). ציוד העזרה הראשונה יהיה בלתי נגיש לילדים"},
+{id:"8.1",ch:"פרק 8 - מבנים יבילים",t:"לא יהיו במבנה חומרים המסוכנים לאדם כאזבסט וכיו\"ב"},
+{id:"8.2",ch:"פרק 8 - מבנים יבילים",t:"המבנה יוצב על בסיס מוגבה מהקרקע. גובהו המרבי יהיה 60 ס\"מ"},
+{id:"8.3",ch:"פרק 8 - מבנים יבילים",t:"המרווח שבין המבנה לבין הקרקע ייאטם מסביב לקירות"},
+{id:"8.4",ch:"פרק 8 - מבנים יבילים",t:"במידה ויש צורך במדרגות למבנה, יבוצעו כך שלא יגרמו למעידה או למכשול אחר"},
+{id:"8.5",ch:"פרק 8 - מבנים יבילים",t:"בכיתה ללא דלת מילוט יקוים פתח מילוט (סורג מילוט)"},
+{id:"8.6",ch:"פרק 8 - מבנים יבילים / חשמל",t:"מפסק פחת למערכת החשמל ימצא במבנה"},
+{id:"9.1",ch:"פרק 9 - לוחות חשמל",t:"לוחות חשמל לא יהיו עשויים מחומרים דליקים. הארונות יהיו סגורים ונעולים. לא יהיו ארונות חשמל בצמוד לכיתות, מעבדות, משרדים וחדרי ספח מאוכלסים"},
+{id:"9.2",ch:"פרק 9 - לוחות חשמל",t:"בלוחות החשמל ימצאו מבטחים אוטומטיים ושני מפסקי זרם פחת ברגישות של 30 MA"},
+{id:"9.3",ch:"פרק 9 - לוחות חשמל",t:"כל המעגלים ומפסקי הזרם הראשיים יסומנו בסימון בר-קיימא"},
+{id:"9.4",ch:"פרק 9 - מפסקים ושקעים",t:"כל בתי התקע (שקעים), מפסקים ונקודות מאור מתחת לגובה 1.80 מטר יהיו מוגנים - תריס מגן פנימי או מכסה"},
+{id:"9.5",ch:"פרק 9 - מפסקים ושקעים",t:"כל אביזרי החשמל יהיו שלמים ומקובעים למקומם"},
+{id:"9.6",ch:"פרק 9 - מנורות וגופי תאורה",t:"גופי תאורה לא יותקנו על גבי חומרים דליקים (כמו עץ וכד')"},
+{id:"9.7",ch:"פרק 9 - מנורות וגופי תאורה",t:"גופי התאורה בחדרי השירותים ובחצר יהיו מטיפוס מוגן-מים"},
+{id:"9.8",ch:"פרק 9 - מנורות וגופי תאורה",t:"גופי תאורה יהיו מוגנים מפגיעה פיזית"},
+{id:"9.9",ch:"פרק 9 - חיווט וכבלי חשמל",t:"כבלי חשמל קבועים יושמו בתוך תעלות מתאימות. כבלי חשמל לא יהיו בהישג ידם של הילדים/תלמידים"},
+{id:"9.10",ch:"פרק 9 - ציוד חשמלי מטלטל",t:"לא יהיה ציוד חשמלי לא תקין. ציוד חשמלי של תלמידים ייבדק ויאושר על ידי חשמלאי. לא יותקנו מאווררי תקרה במגורים ובכיתות עד גובה 2.5 מ'"},
+{id:"9.11",ch:"פרק 9 - ציוד חשמלי מטלטל",t:"ציוד חשמלי המשולב במים, יש להתקין הארקה נפרדת לגוף החיצוני"},
+{id:"9.12",ch:"פרק 9 - מעבדות",t:"מפסקי-זרם, מפסקי-מגן, מבטחים בלוח-משנה, בקרבת הכניסה למעבדה"},
+{id:"9.13",ch:"פרק 9 - מעבדות",t:"בתי-תקע (שקעים) ימוקמו בגובה 25 ס\"מ בקירוב מעל לפני לוח השולחן"},
+{id:"9.14",ch:"פרק 9 - מעבדות",t:"בתי-תקע של מעגלים בעלי מתחים שונים יותקנו באופן שלא יאפשרו טעות בחיבור המכשירים החשמליים"},
+{id:"9.15",ch:"פרק 9 - מעבדות",t:"הצנרת החשמלית ומרכיביה תופרד ממקורות מים וממערכות גז"},
+{id:"9.16",ch:"פרק 9 - מעבדות",t:"בשולחן המורה ימצאו כל המפסקים של המעגלים החשמליים המותקנים במעבדה"},
+{id:"9.17",ch:"פרק 9 - מעבדות",t:"מערכת התאורה במחסני הכימיקלים ובחדרי ההכנה תהיה עמידה בפני התפוצצות וקורוזיה"},
+{id:"9.18",ch:"פרק 9 - חדרי מחשב",t:"מערכת החשמל תותקן בתעלות שיקבעו בגובה שלא יעלה על 25 ס\"מ מעל פני השולחנות"},
+{id:"9.19",ch:"פרק 9 - חדרי מחשב",t:"אין להתקין בתי תקע בחזית השולחן או על גבי סרגל מתחת לגובה פני השולחן"},
+{id:"10.1",ch:"פרק 10 - גז",t:"סוללת מכלי גז לבישול תותקן רחוק ככל האפשר מאזורי הפעילות והתנועה של התלמידים"},
+{id:"10.2",ch:"פרק 10 - גז",t:"מכלי הגז יותקנו במקום פתוח ומאוורר, מגודר ברשת יציבה בגובה 1.80 מטר לפחות, ומקורה בגגון עם פשפש לנעילה"},
+{id:"10.3",ch:"פרק 10 - גז",t:"מרכזיית גז למתקני הסקה תותקן במכל תת-קרקעי. סביב המכל גדר-רשת בגובה 1.80 מטר לפחות עם מנעול"},
+{id:"10.4",ch:"פרק 10 - מכל נפט/סולר",t:"מכל הנפט או הסולר לצורכי הסקה יהיה תת-קרקעי. אם קיבולו קטן מ-500 ליטר ניתן על-קרקעי עם קירות-איגום"},
+{id:"10.5",ch:"פרק 10 - מכל נפט/סולר",t:"המכל יותקן רחוק ככל האפשר מאזורי הפעילות וקרוב לגבול המגרש. בין המכל לבניין מרחק מזערי של 5 מ'"},
+{id:"10.6",ch:"פרק 10 - תחנת דלק פנימית (כפר נוער)",t:"תחנת דלק פנים מוסדית תתוחזק לפי תקנות רישוי עסקים ואחסנת נפט ומוצריו - התשל\"ז 1976"},
+{id:"11.1",ch:"פרק 11 - אולמות ספורט / ארגון",t:"ישמרו שולים נקיים: כדורגל/קט רגל/כדור עף - 3 מ', כדורסל - 2 מ', כדור יד - 2 מ' לרוחב ו-1 מ' לאורך האולם"},
+{id:"11.2",ch:"פרק 11 - אולמות ספורט / דלתות",t:"באולם הספורט שתי דלתות לפחות. רוחב מזערי 1.10 מ'. פתחיהן כלפי חוץ בכיוון המילוט"},
+{id:"11.3",ch:"פרק 11 - אולמות ספורט / תקרה",t:"התקרה הקונסטרוקטיבית, תקרת המשנה והציפויים האקוסטיים יהיו עמידים בפני פגיעות כדורי הספורט"},
+{id:"11.4",ch:"פרק 11 - אולמות ספורט / קירות",t:"קירות האולם חלקים וללא בליטות עד לגובה 2 מ' מהרצפה. פינות קירות ועמודים יהיו קטומים"},
+{id:"11.5",ch:"פרק 11 - אולמות ספורט / רצפה",t:"משטח הרצפה ללא בליטות, שקעים ומחומרים מונעי החלקה"},
+{id:"11.6",ch:"פרק 11 - אולמות ספורט / אוורור",t:"יהיו פתחי אוורור או אמצעי אוורור מתאימים"},
+{id:"11.7",ch:"פרק 11 - אולמות ספורט / תאורה",t:"גופי התאורה יוגנו מפני שבירה ופגיעות באמצעות שקעים או דגם אנטי-ונדל"},
+{id:"11.8",ch:"פרק 11 - אולמות ספורט / חשמל",t:"לוח אולם-ההתעמלות יותקן באחד מחדרי הספח שמחוץ לאולם"},
+{id:"11.9",ch:"פרק 11 - מתקני ספורט",t:"מכשירי ההתעמלות המיועדים לתרגילי תנופה יותקנו באופן שכיוון התנופה יהיה לאורך האולם. מרחק מזערי מקיר האורך - 2.50 מ'"},
+{id:"11.10",ch:"פרק 11 - מתקני ספורט",t:"כל חלקי העץ במתקני ההתעמלות יהיו חלקים, מצופים לכה שקופה. חלקי המתכת יהיו חלקים ושקועים"},
+{id:"11.11",ch:"פרק 11 - מתקני ספורט",t:"המרחקים בין מתקן למתקן יהיו כאלה שבשום פנים ואופן לא תהיה חפיפה אפשרית בין המתעמלים"},
+{id:"11.12",ch:"פרק 11 - מתקני ספורט",t:"לא יהיו מתקני ספורט מאולתרים"},
+{id:"11.13",ch:"פרק 11 - מתקני ספורט",t:"לא יהיו מתקנים ניידים המאפשרים טיפוס (סולמות, פיגומים). אין לאחסן ציוד שלא שייך למהות תפקוד האולם"},
+{id:"12.1",ch:"פרק 12 - מעבדות / מעברים",t:"במעבדה לפחות מעבר אחד ברוחב 0.9 מ' חופשי מכל מכשול. מעבדת כימיה - לפחות שתי דלתות הנפתחות כלפי חוץ"},
+{id:"12.2",ch:"פרק 12 - מעבדות / מעברים",t:"בחדרי הכנה הצמודים למעבדות תיבנה יציאה נפרדת. הדלתות תיפתחנה כלפי-חוץ ותהיינה מסוג עמיד אש"},
+{id:"12.3",ch:"פרק 12 - מעבדות / צנרות",t:"לא יהיה שימוש בצנרת או בבידוד העשויים מחומרים פלסטיים, רק במקרים מיוחדים"},
+{id:"12.4",ch:"פרק 12 - מעבדות / צנרות",t:"לכל סוגי הצנרת המגיעים לשני מקומות לפחות בחדר המעבדה, חייב להיות ניתוק כללי ליד שולחן המורה"},
+{id:"12.5",ch:"פרק 12 - מעבדות / כימיקלים",t:"כימיקלים יאוחסנו במחסן נפרד, בארונות מתאימים לקבוצת סיכון זהה, מאוורר היטב בחלקו התחתון והעליון"},
+{id:"12.6",ch:"פרק 12 - מעבדות / כימיקלים",t:"שלוש מעבדות ויותר - מחסן כימיקלים נפרד עם מנעול צילינדר"},
+{id:"12.7",ch:"פרק 12 - מעבדות / גז",t:"גז דחוס יסופק דרך צנרת בלחץ נמוך מארון ייעודי נעול עם גלילים"},
+{id:"12.8",ch:"פרק 12 - מעבדות / גז",t:"גלילי גז (גזיות) יהיו מקובעים ומאובטחים למניעת נפילתם. יוצבו במקום מאוורר ומוצל"},
+{id:"12.9",ch:"פרק 12 - מעבדות / מנדף",t:"כל מנגנוני ההפעלה של מערכות השירות (מים, גז, חשמל) יהיו מחוץ למנדף"},
+{id:"12.10",ch:"פרק 12 - מעבדות / מנדף",t:"החלון המתרומם יובטח מפני נפילה מקרית. נורת סימון אדומה תצביע על המצב התפעולי"},
+{id:"12.11",ch:"פרק 12 - מעבדות / ציוד מגן",t:"ליד כל חדר מעבדה ארון ובו ציוד-מגן אישי, ציוד עזרה-ראשונה וכלים לאיסוף ולטיהור-חירום של שפכים"},
+{id:"12.12",ch:"פרק 12 - מעבדות / תאורת חירום",t:"במעבדות המופעלות בשעות החשכה ולאורך דרכי המילוט - גופי תאורת-חירום"},
+{id:"12.13",ch:"פרק 12 - מעבדות / שטיפת עיניים",t:"בכל מעבדה לכימיה תותקן עמדה תקנית לשטיפת עיניים (עם כיסוי למניעת אבק)"},
+{id:"12.14",ch:"פרק 12 - מעבדות / מקלחת חירום",t:"בקרבת פתח היציאה ממעבדות הכימיה תמצא מקלחת-חירום תקנית"},
+{id:"12.15",ch:"פרק 12 - מעבדות / תנאי סביבה",t:"חדר הכנה יצויד בוונטה ומזגן מתאים. כיתת מעבדה תצויד בשתי וונטיות מתאימות"},
+{id:"13.1",ch:"פרק 13 - חדרי מלאכה",t:"יהיה ציוד מגן אישי מתאים למשימה. הוראות בטיחות והפעלה יהיו תלויים קרוב לעמדה"},
+{id:"13.2",ch:"פרק 13 - חדרי מלאכה",t:"בחדרי מלאכה עם סיכוני אש פוטנציאליים - דלתות בעלות עמידות-אש מזערית של חצי שעה"},
+{id:"13.3",ch:"פרק 13 - חדרי מלאכה",t:"לאורך חדר המלאכה מעבר מרכזי ברוחב מטר אחד, שיסתיים בפתח היציאה"},
+{id:"13.4",ch:"פרק 13 - חדרי מלאכה",t:"החלקים הנעים והסובבים של מכונות יוגנו לבטח. אין להסיר מגנים מחלקים נעים ומסתובבים"},
+{id:"13.5",ch:"פרק 13 - חדרי מלאכה / חשמל",t:"לא יוזנו מכונות ומכשירים ממעגלי מאור"},
+{id:"13.6",ch:"פרק 13 - חדרי מלאכה / חשמל",t:"המפסק הראשי יותקן בקרבת הכניסה ותאופשר נעילתו במצב מופסק"},
+{id:"13.7",ch:"פרק 13 - חדרי מלאכה / חשמל",t:"לאורך הקירות במרווחים שאינם עולים על 5 מ' יותקנו לחצני חירום בולטים להפסקת הזרם בלבד"},
+{id:"13.8",ch:"פרק 13 - חדרי מלאכה / חשמל",t:"כל מכונה או מתקן חשמלי קבועים יצוידו נוסף למפסק המקורי גם במפסק שיורכב על הקיר"},
+{id:"13.9",ch:"פרק 13 - מכונות וציוד",t:"המכונות תמוקמנה באופן שפריטים ארוכים לא יפריעו לפעולת מכונות אחרות. המרחק המזערי בין מכונה למכונה - 90 ס\"מ"},
+{id:"13.10",ch:"פרק 13 - מכונות וציוד",t:"תימנע הפעלה בלתי מבוקרת של ציוד מסוכן בחדרי המלאכה. נדרש להציב הוראות בטיחות להפעלת ציוד"},
+{id:"13.11",ch:"פרק 13 - מכונות וציוד",t:"על מכונות הפועלות באופן אוטומטי, יש להתקין שילוט \"הפעלה אוטומטית\""},
+{id:"13.12",ch:"פרק 13 - מכונות וציוד",t:"תנורי קרמיקה יותקנו בחדרי ספח מיוחדים, או באגף נפרד עם סידורי אוורור"},
+{id:"13.13",ch:"פרק 13 - רעש",t:"בחדרי מלאכה רועשים תקוימנה בדיקות רעש תקופתיות. ציוד ומיכון מרעיש (מדחסים, גנרטורים) יופרד מחלל חדר המלאכה"},
+{id:"13.14",ch:"פרק 13 - רעש",t:"בחדרי מלאכה עם רעש מזיק - שילוט אזהרה, שילוט על שימוש בציוד מגן, אטמי אוזניים"},
+{id:"13.15",ch:"פרק 13 - הסמכות",t:"מכונות ומכשירים במסגרייה/נגריה/מוסך יופעלו על ידי עובדים שהוסמכו. הנושא ייבדק פעם בשנה על ידי הממונה על הבטיחות"},
+{id:"15.1",ch:"פרק 15 - מטבח / דלתות",t:"דלתות המטבח תיפתחנה כלפי חוץ"},
+{id:"15.2",ch:"פרק 15 - מטבח / אוורור",t:"המטבח יהיה מאוורר"},
+{id:"15.3",ch:"פרק 15 - מטבח / ניקוז",t:"תעלות ניקוז תהיינה שקועות ומוגנות ברשת בגובה פני הרצפה"},
+{id:"15.4",ch:"פרק 15 - מטבח / חומרים מסוכנים",t:"לא יאוחסנו במטבח חומרים מתלקחים"},
+{id:"15.5",ch:"פרק 15 - מטבח / חומרים מסוכנים",t:"חומרי ניקוי במטבח יאוחסנו בארון סגור ונעול שיסומן \"זהירות! חומרי-ניקוי!\""},
+{id:"15.6",ch:"פרק 15 - מטבח / חומרים מסוכנים",t:"חומרי הניקוי יהיו באריזתם המקורית, ויאוחסנו מחוץ למבנה, במקום נעול ומאוורר"},
+{id:"15.7",ch:"פרק 15 - מטבח / עזרה ראשונה",t:"במטבח יהיה ציוד עזרה ראשונה תקין, נגיש ובמקום בולט"},
+{id:"15.8",ch:"פרק 15 - מטבח / מיקום",t:"המטבח וחדר האוכל לא יהיו במקלט או בחדר תת-קרקעי"},
+{id:"15.9",ch:"פרק 15 - מטבח / מיקום",t:"חדר האוכל, המטבח וחדר-החלוקה יהיו במפלס אחד, ללא מדרגות ביניהם"},
+{id:"15.10",ch:"פרק 15 - מטבח / מוכנות אש",t:"בכל מטבח מטפה 6 ק\"ג אבקה, נגיש ובולט. מטף נוסף בכניסה למטבח ולמחסן"},
+{id:"15.11",ch:"פרק 15 - מטבח / מיגון מכונות",t:"כל המכונות במטבח תהיינה מוגנות באופן בטיחותי"},
+{id:"15.12",ch:"פרק 15 - מטבח / מיגון מכונות",t:"מכונה לחיתוך לחם - הפעלה רק עם סגירת מכסה ההגנה של אזור הסכינים"},
+{id:"15.13",ch:"פרק 15 - מטבח / מיגון מכונות",t:"סירים מתהפכים יהיו מאובטחים באופן שתימנע התהפכותם בפעולה אקראית"},
+{id:"15.14",ch:"פרק 15 - מטבח / אחסון",t:"תכולת המחסן תאוחסן על מדפים, החפצים הכבדים למטה והקלים למעלה"},
+{id:"15.15",ch:"פרק 15 - מטבח / אחסון",t:"כלי זכוכית יאוחסנו באופן שתימנע נפילתם"},
+{id:"15.16",ch:"פרק 15 - מטבח / אחסון",t:"תהיה הפרדה בין חומרי-ניקוי וחיטוי, מזון ואריזות ריקות"},
+{id:"15.17",ch:"פרק 15 - מטבח / חדר קירור",t:"לדלת חדר הקירור יהיה מתקן המאפשר פתיחה מבפנים, כפתור אזעקה מבפנים ופעמון אזעקה מבחוץ"},
+{id:"15.18",ch:"פרק 15 - מטבח / תלמידים",t:"לא יועסקו תלמידים בעבודות מטבח"},
+{id:"16.1",ch:"פרק 16 - חדר אוכל",t:"בחדר האוכל ציוד כיבוי-אש תקין, נגיש, גלוי וקרוב לפתחי היציאה"},
+{id:"16.2",ch:"פרק 16 - חדר אוכל",t:"שלט מואר \"יציאה\" יהיה מעל דלתות היציאה בחדר האוכל"},
+{id:"16.3",ch:"פרק 16 - חדר אוכל",t:"בחדר האוכל תהיינה תאורות חירום"},
+{id:"16.4",ch:"פרק 16 - חדר אוכל / סורגים",t:"חלונות בקומת קרקע עם סורגים - בכל כיתה לפחות פתח מילוט אחד. מפתח בקופסת ניפוץ אדומה עם פטישון"}
+
+,{id:"12.16",ch:"פרק 12 - מעבדות / תנאי סביבה",t:"התאורה בכיתת מעבדה תהיה מסוג תאורה מוגנת מים"}
+,{id:"12.17",ch:"פרק 12 - מעבדות / תנאי סביבה",t:"תאורה במחסן כימיקלים תהיה מסוג מוגן התפוצצות"}
+,{id:"12.18",ch:"פרק 12 - מעבדות / חשמל",t:"כל שקעי החשמל בחדר ההכנה ובכיתות המעבדה יהיו מסוג מוגן מים"}
+,{id:"12.19",ch:"פרק 12 - מעבדות / פסולת כימית",t:"בחדר הכנה תהיה עמדה לאחסון פסולת כימית מתאימה ומסומנת"}
+,{id:"13.8",ch:"פרק 13 - חדרי מלאכה / מכונות וציוד",t:"המכונות והציוד יופעלו ויתוחזקו לפי הוראות היצרן"}
+,{id:"13.9",ch:"פרק 13 - חדרי מלאכה / מכונות וציוד",t:"המכונות תמוקמנה באופן שפריטים ארוכים לא יפריעו לפעולתן של מכונות אחרות ולא יבלטו לתוך המעבר. המרחק המזערי בין מכונה למכונה יהיה 90 ס\"מ. כל הציוד הנייח חייב להיות יציב ומקובע"}
+,{id:"13.11",ch:"פרק 13 - חדרי מלאכה / מכונות וציוד",t:"על מכונות הפועלות באופן אוטומטי, יש להתקין שילוט \"הפעלה אוטומטית\""}
+,{id:"13.12",ch:"פרק 13 - חדרי מלאכה / מכונות וציוד",t:"תנורי קרמיקה יותקנו בחדרי ספח מיוחדים, או באגף נפרד בחדרי המלאכה שבהם סידורי אוורור"}
+,{id:"13.13",ch:"פרק 13 - חדרי מלאכה / רעש",t:"בחדרי מלאכה רועשים תקוימנה בדיקות רעש תקופתיות. ציוד ומיכון מרעיש (מדחסים, גנרטורים וכו') יופרד מחלל חדר המלאכה. מדידות רעש יבוצעו לפי תקנות הבטיחות בעבודה"}
+,{id:"13.14",ch:"פרק 13 - חדרי מלאכה / רעש",t:"בחדרי המלאכה, במקומות שנקבע כי קיים בהם רעש מזיק, יש להציב שילוט אזהרה לרעש מזיק, שילוט המורה על שימוש באמצעי מגן מתאימים וכן סידורים להקצאת אטמי אוזניים ו/או אזניות"}
+,{id:"13.15",ch:"פרק 13 - חדרי מלאכה / הסמכות",t:"מכונות ומכשירים במסגרייה/נגריה/מוסך ובית מלאכה אחר יופעלו על ידי עובדים שהוסמכו לעבודה וזוהי עבודתם העיקרית. הנושא ייבדק פעם בשנה על ידי הממונה על הבטיחות"}
+,{id:"14.1",ch:"פרק 14 - הצבת מוצג / תכנון",t:"תכנון המוצג והתקנתו יאושרו בידי מהנדס מבנים"}
+,{id:"14.2",ch:"פרק 14 - הצבת מוצג",t:"המוצג ומיקומו לא יהיו מפגע בטיחותי ולא תהיינה בו פינות חדות, בליטות חדות או זוויות חדות"}
+,{id:"14.3",ch:"פרק 14 - הצבת מוצג / חשמל ומים",t:"מתקן המשלב חשמל ומים חייב באישור ובפיקוח של מהנדס חשמל ומהנדס אינסטלציה, ועליו לכלול גם תאורה חיצונית ואפשרות להתזת מים חיצונית ולניקוז"}
+,{id:"14.4",ch:"פרק 14 - הצבת מוצג / שילוט",t:"כל מוצג יתוחם וישולט בשלט האוסר על טיפוס"}
+,{id:"14.5",ch:"פרק 14 - הצבת מוצג / מרחק מהכניסה",t:"מוצג שיותקן ליד הכניסה למוסד יותקן במרחק של 3 מ' לפחות מהכניסה, באופן שהוא לא יהיה מפגע בכניסה למוסד או ביציאה ממנו"}
+,{id:"14.6",ch:"פרק 14 - הצבת מוצג / מרחק מחלונות",t:"מוצג שיותקן בחצר המוסד יותקן לפחות במרחק של 3 מ' מחלונות המבנה ומגדר המוסד"}
+,{id:"14.7",ch:"פרק 14 - הצבת מוצג / גובה",t:"גובה המוצג לא יעלה על 2.5 מטר"}
+,{id:"15.12",ch:"פרק 15 - מטבח / מיגון מכונות",t:"את המכונה לחיתוך לחם אפשר יהיה להפעיל רק עם סגירת מכסה ההגנה של אזור הסכינים"}
+,{id:"15.13",ch:"פרק 15 - מטבח / מיגון מכונות",t:"סירים מתהפכים יהיו מאובטחים באופן שתימנע התהפכותם בפעולה אקראית"}
+,{id:"15.14",ch:"פרק 15 - מטבח / אחסון",t:"תכולת המחסן תאוחסן על מדפים, החפצים הכבדים למטה והקלים למעלה"}
+,{id:"15.15",ch:"פרק 15 - מטבח / אחסון",t:"כלי זכוכית יאוחסנו באופן שתימנע נפילתם"}
+,{id:"15.16",ch:"פרק 15 - מטבח / אחסון",t:"תהיה הפרדה בין חומרי-ניקוי וחיטוי, בין מזון ובין אריזות ריקות"}
+,{id:"15.18",ch:"פרק 15 - מטבח / תלמידים",t:"לא יועסקו תלמידים בעבודות מטבח"}
+,{id:"16.4a",ch:"פרק 16 - חדר אוכל / סורגים",t:"פתח המילוט בסורג ייפתח כלפי חוץ ויהיה במידות מינימום של 0.80 מ' (רוחב) ו-1.00 מ' (גובה)"}
+,{id:"16.4b",ch:"פרק 16 - חדר אוכל / סורגים",t:"צבע הסורג המשמש כפתח מילוט יהיה מסוג זוהר, פולט אור משני הצדדים"}
+,{id:"16.4c",ch:"פרק 16 - חדר אוכל / סורגים",t:"מעל החלון יותקן שלט זוהר ועליו כתוב \"חלון חילוץ\""}
+,{id:"16.4d",ch:"פרק 16 - חדר אוכל / סורגים",t:"מפתח המנעול שעל הסורג יימצא בתוך קופסת ניפוץ צבועה באדום, במרחק לא גדול מהמנעול. מפתחות נוספים (מאסטר) יהיו בארון המפתחות של מוסד החינוך ובידי המורה וכל אדם אחראי לחדר. קופסת הניפוץ תכיל פטישון להוצאה מהירה של המפתח בשעת חירום"}
+
+,{id:"17.1",ch:"פרק 17 - הנוי / כלי עבודה",t:"כלי עבודה חשמליים יוזנו דרך ממסר מגן (פחת)"}
+,{id:"17.2",ch:"פרק 17 - הנוי / כלי עבודה",t:"כל החלקים הנעים והמסתובבים ימוגנו"}
+,{id:"17.3",ch:"פרק 17 - הנוי / כלי עבודה",t:"חרמש מכני ומסור מנועי יופעלו על ידי מבוגר בלבד"}
+,{id:"17.4",ch:"פרק 17 - הנוי / חומרי הדברה",t:"חומרי הדברה יאוחסנו במקום נעול ומשולט. חומרי הדברה יוחזקו באריזות המקוריות כחוק"}
+
+,{id:"18.1",ch:"פרק 18 - טרקטורים / הסמכה",t:"מנהל ענף המכונות החקלאיות/מוסך הטרקטורים יהיה בעל הכשרה מקצועית מתאימה ובעל היתר ממשרד התחבורה לנהל מוסך טרקטורים ומכונות חקלאיות"}
+,{id:"18.2",ch:"פרק 18 - טרקטורים / מיגון מכונות",t:"החלקים הנעים במכונה, בין ממקור הנעה ובין של תמסורת הנעה - יהיו מגודרים במגנים באופן שיבטיחו את העובדים מפני כל פגיעה"}
+,{id:"18.3",ch:"פרק 18 - טרקטורים / מיגון מכונות",t:"חיבור המגנים צריך להיות בדרך כלל קבוע ובצורה שתאפשר טיפול ואחזקה מתאימים. על המכונה ייתלה שלט \"בלי המגן אסור להפעיל את הציוד\""}
+,{id:"18.4",ch:"פרק 18 - טרקטורים / הוראות",t:"עיקרי הוראות הבטיחות יפורסמו על לוח המודעות במוסך"}
+
+,{id:"19.1",ch:"פרק 19 - מכונות חקלאיות ייחודיות",t:"המכונות תצוידנה בציוד מגן שיהיה בהישג יד ובשילוט מתאים המורה על חובת השימוש בציוד זה. למפזרת זבל אורגני יהיה מוט שימנע גישה למנגנון הפיזור. למפזרת צנטריפוגלית יהיה מוט מגן היקפי שימנע גישה חופשית למנגנון הפיזור"}
+,{id:"19.2",ch:"פרק 19 - מכונות חקלאיות ייחודיות",t:"במכונה יהיו משקפי מגן ושילוט המחייב שימוש במשקפיים אלו. במכסחת אופקית יהיו מגן מפח או שרשראות תלויות"}
+,{id:"19.3",ch:"פרק 19 - מכונות חקלאיות ייחודיות",t:"במתקן יהיה ציוד מגן אישי מתאים כמו משקפי מגן, נעליים גבוהות וכדומה. בכלי יד חשמליים עם מוט מאריך יהיה המוט מעץ או חומר מבודד"}
+
+,{id:"20.1",ch:"פרק 20 - התקני בטיחות בטרקטורים / רישיונות",t:"הטרקטורים, העגלות והמכונות החקלאיות העצמאיות יהיו מצוידים ברישיונות בתוקף"}
+,{id:"20.2",ch:"פרק 20 - התקני בטיחות בטרקטורים / מסגרת בטיחות",t:"לטרקטור תהיה מסגרת בטיחות שבה גם גגון להגנה מקרני השמש"}
+,{id:"20.3",ch:"פרק 20 - התקני בטיחות בטרקטורים / מסגרת בטיחות",t:"לטרקטור תהיינה ידיות אחיזה ומדרגות לצורך עלייה לעמדת הנהג"}
+,{id:"20.4",ch:"פרק 20 - התקני בטיחות בטרקטורים / חשמל ותאורה",t:"לטרקטורים יהיה אור אחורי שיאיר את הכלי הנגרר, וכן יהיו להם אורות אחוריים תקינים"}
+,{id:"20.5",ch:"פרק 20 - התקני בטיחות בטרקטורים / חשמל ותאורה",t:"על הטרקטור יהיו סרטים זוהרים לאזהרה בנקודות תורפה"}
+,{id:"20.6",ch:"פרק 20 - התקני בטיחות בטרקטורים / חשמל ותאורה",t:"בטרקטור יהיה מתקן למניעת התנעה ללא רשות"}
+,{id:"20.7",ch:"פרק 20 - התקני בטיחות בטרקטורים / חשמל ותאורה",t:"בטרקטור יהיה מפסק ראשי למערכת החשמל"}
+,{id:"20.8",ch:"פרק 20 - התקני בטיחות בטרקטורים / בלמים",t:"דוושות הבלימה תהיינה מחוספסות או מנוקבות, ודוושות הבלם תהיינה מצוידות במתקן המחבר ומנתק את הנעילה"}
+,{id:"20.9",ch:"פרק 20 - התקני בטיחות בטרקטורים / מיגון מכונות",t:"יהיו מגנים על כלל החלקים הנעים בטרקטורים, כמו הגלגלים, הגל הקרדני, מעביר הכוח, גלגל השרשרת וכדומה"}
+,{id:"20.10",ch:"פרק 20 - התקני בטיחות בטרקטורים / מיגון מכונות",t:"הגלגלים האחוריים יהיו מוגנים בכנפיים למניעת מגע מקרי"}
+,{id:"20.11",ch:"פרק 20 - התקני בטיחות בטרקטורים / צינור פליטה",t:"צינור הפליטה יהיה מורכב בגובה באופן שימנע זרימת גזים הנפלטים לכיוון הנהג. בצינור הפליטה יהיה קולט גצים"}
+,{id:"20.12",ch:"פרק 20 - התקני בטיחות בטרקטורים / גרירה",t:"פין הגרירה יהיה תקין, ובקצהו התחתון יהיה פין אבטחה"}
+,{id:"20.13",ch:"פרק 20 - התקני בטיחות בטרקטורים / כיבוי אש",t:"בטרקטור יהיה מטפה אבקה וארגז עזרה ראשונה"}
+,{id:"20.14",ch:"פרק 20 - התקני בטיחות בטרקטורים / מניעת ישיבה",t:"לא יתקנו מקומות ישיבה למעט הנהג"}
+
+,{id:"21.1",ch:"פרק 21 - ציוד וכלים נגררים",t:"ברישיון הטרקטור יהיה רישוי לכלי נגרר"}
+,{id:"21.2",ch:"פרק 21 - ציוד וכלים נגררים",t:"בכלי הנגרר תהיה רגלית מתקפלת שתהיה צמודה ליצול של הנגרר"}
+,{id:"21.3",ch:"פרק 21 - ציוד וכלים נגררים",t:"בכלי הנגרר יהיו סדי עצירה מעץ"}
+,{id:"21.4",ch:"פרק 21 - ציוד וכלים נגררים",t:"בכלי הנגרר יהיה מטפה אבקה בקיבולת של 3 ק\"ג (לכלים גדולים)"}
+,{id:"21.5",ch:"פרק 21 - ציוד וכלים נגררים",t:"בכלי הנגרר יהיו סימונים לאזהרה בנקודות תורפה וסכנה"}
+
+,{id:"22.1",ch:"פרק 22 - סככת מכונות / סככת חניה",t:"הסככה, ובכלל זה מקום חנייתם של הטרקטורים, תגודר בגדר יציבה וחזקה עם שילוט על איסור כניסה"}
+,{id:"22.2",ch:"פרק 22 - סככת מכונות / שער",t:"שער הכניסה יהיה ניתן לנעילה"}
+,{id:"22.3",ch:"פרק 22 - סככת מכונות / תאורה",t:"בסככה תותקן מערכת תאורה נאותה בשעות החשכה"}
+,{id:"22.4",ch:"פרק 22 - סככת מכונות / כיבוי אש",t:"בסככה ובסביבתה יותקנו אמצעים לכיבוי שרפות בהתאם להמלצת שירותי הכיבוי, והעובדים יודרכו בכיבוי אש"}
+
+,{id:"23.1",ch:"פרק 23 - החממה / מיגון מכונות",t:"המאוורר יהיה בעל מסגרת הגנה מפני הלהבים וממערכת ההנעה ובעל שילוט אזהרה מופעל אוטומטית. כאשר המגן יוסר תהיה הפסקת פעולה אוטומטית"}
+,{id:"23.2",ch:"פרק 23 - החממה / מערכת הדישון",t:"בצינור המים המזין את מכל הדישון יהיו 2 שסתומים אל-חוזרים"}
+,{id:"23.3",ch:"פרק 23 - החממה / מערכת הדישון",t:"תהיה הפרדה בין מכל הריסוס/דישון לרשת המים"}
+,{id:"23.4",ch:"פרק 23 - החממה / מערכת הדישון",t:"מכלי הדישון יוצבו על גבי מעמדים יציבים"}
+,{id:"23.5",ch:"פרק 23 - החממה / רצפה",t:"הרצפה בחדר המיון והאריזה תהיה בשיפוע, עם תעלות ניקוז למים"}
+,{id:"23.6",ch:"פרק 23 - החממה / חומרי הדברה",t:"חומרי ההדברה, החיטוי והאיבוק יימצאו במחסן נפרד, נעול ומשולט כחוק"}
+,{id:"23.7",ch:"פרק 23 - החממה / חשמל ותאורה",t:"תהיה בחממה תאורה נאותה"}
+,{id:"23.8",ch:"פרק 23 - החממה / חשמל ותאורה",t:"תיבדק תקינות הארקתם של המאיידים ממתכת"}
+,{id:"23.9",ch:"פרק 23 - החממה / גובה וסולמות",t:"סולמות בחממה יהיו תקינים ותקניים"}
+,{id:"23.10",ch:"פרק 23 - החממה / גובה וסולמות",t:"עבודה בגובה (מעל 2 מטר) אך ורק על ידי עובדים שהוסמכו לכך"}
+
+,{id:"24.1",ch:"פרק 24 - רפת ודיר / ציוד עזרה ראשונה",t:"ציוד העזרה הראשונה יימצא ברפת ובדיר, והעובדים האחראים ידעו להגיש עזרה ראשונה. הרפת והדיר יהיו בפיקוח וטרינרי צמוד ומוסמך"}
+,{id:"24.2",ch:"פרק 24 - רפת ודיר / חדרי הלבשה ומקלחות",t:"ברפת ובדיר יהיו מקלחות חמות וחדרי הלבשה מתאימים"}
+,{id:"24.3",ch:"פרק 24 - רפת ודיר / ביגוד והנעלה",t:"העובדים ילבשו נעלי עבודה או מגפיים, ויהיה שילוט מתאים המחייב זאת"}
+,{id:"24.4",ch:"פרק 24 - רפת ודיר / ארגון ציוד וכלי עבודה",t:"יהיה מתקן מסודר לכלי עבודה"}
+
+,{id:"25.1",ch:"פרק 25 - חדרי חליבה / מיגון מכונות",t:"גלגלי רצועות ההנעה של מדחסי הקירור ומכונות החליבה יגודרו באופן בטיחותי, ואבזרי החשמל יהיו מוגני מים"}
+,{id:"25.2",ch:"פרק 25 - חדרי חליבה / מיגון מכונות",t:"מצמדי המנועים והמשאבות של חלקי ההנעה של הבוחשים יגודרו באופן בטיחותי, וחדר המכונות והמדחסים יהיה מאוורר, נעול ונקי"}
+,{id:"25.3",ch:"פרק 25 - חדרי חליבה / יציבות והגנה מנפילה",t:"מכלי החלב מהסוג המאורך יצוידו במשטחי עמידה עם מעקים משני צדי המכל. המדחסים יעברו בדיקות תקופתיות כחוק על ידי בודק מוסמך"}
+,{id:"25.4",ch:"פרק 25 - חדרי חליבה / יציבות והגנה מנפילה",t:"פעילות אחזקה במכלי חלב, מזון ותערובת (סילויים), יבוצעו בהתאם לדרישות הבטיחות בעבודה כבחללים מוקפים"}
+,{id:"25.5",ch:"פרק 25 - חדרי חליבה / יציבות והגנה מנפילה",t:"מצג הבוחש של כל מכל יצויד במנעול תלייה"}
+,{id:"25.6",ch:"פרק 25 - חדרי חליבה / חומרים",t:"חומרי ניקוי, חיטוי וצריבה יאוחסנו בארון סגור, משולט באזהרה מתאימה"}
+,{id:"25.7",ch:"פרק 25 - חדרי חליבה / ציוד מגן",t:"יש להשתמש בציוד מגן אישי מתאים לשימוש בחומרי חיטוי וצריבה"}
+,{id:"25.8",ch:"פרק 25 - חדרי חליבה / חשמל",t:"בחדר החליבה יהיה מפסק זרם פחת מסומן ומוגן כהלכה"}
+
+,{id:"26.1",ch:"פרק 26 - סככת רביצה / מילוט",t:"בסככות יהיו מעברי אדם לצורך מיגון ומילוט בעת סכנה"}
+,{id:"26.2",ch:"פרק 26 - סככת רביצה / חשמל",t:"לוחות החשמל וכבלי החשמל יהיו אטומים ומוגנים ממים"}
+,{id:"26.3",ch:"פרק 26 - סככת רביצה / מיגון מכונות",t:"המאווררים יהיו מוגנים מכל הצדדים וייתלו בגובה של 2.5 מ' לפחות"}
+
+,{id:"27.1",ch:"פרק 27 - בורות זבל ונוזלים / תיחום",t:"יש לגדר את בורות הזבל ולשלטם בשילוט אזהרה"}
+,{id:"27.2",ch:"פרק 27 - בורות זבל ונוזלים / דיפון ובידוד",t:"הבורות יהיו מדופנים בחומר המונע מעבר מזהמים לקרקע"}
+
+,{id:"28.1",ch:"פרק 28 - מרכזי מזון ומכלי תערובת / סביבה",t:"חובה להגן על רגלי המכלים נגד פגיעת כלי רכב"}
+,{id:"28.2",ch:"פרק 28 - מרכזי מזון ומכלי תערובת / גובה",t:"הפתח הקדמי של המכל צריך להיות בגובה של 3.2 מ' מעל הרגליים. העבודות במכלים יבוצעו בהתאם לדרישות הבטיחות בחללים מוקפים"}
+,{id:"28.3",ch:"פרק 28 - מרכזי מזון ומכלי תערובת / מניעה",t:"יש להקפיד שסביבת המתבן תהיה נקייה מעשבים ורצפת המתבן תהיה ישרה"}
+,{id:"28.4",ch:"פרק 28 - מרכזי מזון ומכלי תערובת / הוראות",t:"משטחים לחומרים לחים ולגינות להחמצת פרי הדר יש לגדר בשלטי אזהרה"}
+
+,{id:"29.1",ch:"פרק 29 - המטע והפרדס / ציוד מגן",t:"עבודות שונות במטע ובפרדס מחייבות שימוש באמצעי מגן. הציוד שיהיה בנמצא חייב להיות תקין ותקני, וחייב להיות שילוט המחייב את השימוש באמצעי המגן"}
+,{id:"29.2",ch:"פרק 29 - המטע והפרדס / ציוד מגן",t:"הסולמות יהיו תקינים ויהיו מצוידים בפלטות עם דוקרן למניעת שקיעה"}
+
+,{id:"30.1",ch:"פרק 30 - חומרי הדברה / מחסן",t:"אין לאחסן חומרי הדברה בשדה, אלא במחסן. אם כמות החומרים קטנה, אפשר לאחסנם בארגז סגור כהלכה"}
+,{id:"30.2",ch:"פרק 30 - חומרי הדברה / מחסן",t:"לא יאוחסנו במחסן או בארגז האחסנה אלא חומרי הדברה בלבד, ואולם מותר לאחסן במחסן זבלים כימיים ואריזות ריקות של חומרי הדברה"}
+,{id:"30.3",ch:"פרק 30 - חומרי הדברה / מחסן",t:"רצפת המחסן תהיה מחומר מוצק ובלתי חדיר לרטיבות"}
+,{id:"30.4",ch:"פרק 30 - חומרי הדברה / מחסן",t:"חומרי הדברה יוחזקו במחסן על משטחי מתכת קבועים, בגובה של 25 ס\"מ לפחות מהרצפה ובמרחק של 25 ס\"מ לפחות מקירות המחסן"}
+,{id:"30.5",ch:"פרק 30 - חומרי הדברה / מחסן",t:"במחסן יהיה אוורור נאות באמצעות פתחים בגובה של מטר וחצי לפחות מן הרצפה. בפתחים יותקנו סורגים למניעת הכניסה אל המחסן של מבוגרים וילדים, וכן תותקן רשת זבובים"}
+,{id:"30.6",ch:"פרק 30 - חומרי הדברה / מחסן",t:"המחסן וארגזי האחסנה יהיו במצב תקין ויינעלו. מפתח הארגז או המחסן יוחזק בדרך כלל בידי המחסנאי. מותר למסור את המפתח לבעל רישיון ריסוס מטעם האגף להגנת הצומח, אשר מונה כחוק"}
+,{id:"30.7",ch:"פרק 30 - חומרי הדברה / מחסן",t:"בצד החיצון של דלת המחסן יוצג שלט אזהרה תקני וייכתב עליו \"סכנה! רעל! חומרי הדברה\""}
+,{id:"30.8",ch:"פרק 30 - חומרי הדברה / בריאות",t:"חובה על המשתמשים לעבור בדיקות רפואיות תקופתיות על פי תקנות משרד הבריאות"}
+,{id:"30.9",ch:"פרק 30 - חומרי הדברה / שפך ודליפה",t:"חומר הדברה שנתפזר שלא בדרך הדברה ייאסף מיד, ואם הוא אינו ראוי לשימוש, הוא יושמד ללא דיחוי ובאופן בטוח"}
+,{id:"30.10",ch:"פרק 30 - חומרי הדברה / שפך ודליפה",t:"חומרי הדברה יישמרו באריזות המקוריות של היצרן, על סימוניהן ועל תוויותיהן המקוריות"}
+,{id:"30.11",ch:"פרק 30 - חומרי הדברה / אריזות",t:"חומר ההדברה יוחזק תמיד בכלי סגור או באריזה סגורה"}
+,{id:"30.12",ch:"פרק 30 - חומרי הדברה / אריזות",t:"העברת חומר הדברה מאריזתו המקורית לכלי או לאריזה אחרת אסורה"}
+,{id:"30.13",ch:"פרק 30 - חומרי הדברה / אריזות",t:"השימוש באריזות ובציוד המגן יהיה כנדרש בתקנות על פי ההוראות שעל תוויות האריזה"}
+
+,{id:"31.1",ch:"פרק 31 - מפעלים לאספקת מים / סולם",t:"הסולם הקבוע המוליך לראש המגדל יהיה תקין ובעל הגנה מלאה למניעת נפילה"}
+,{id:"31.2",ch:"פרק 31 - מפעלים לאספקת מים / סולם",t:"הקצה העליון של הסולם יהיה בגובה של 1-1.5 מ' מעל המפלס שהוא מוביל אליו"}
+,{id:"31.3",ch:"פרק 31 - מפעלים לאספקת מים / סולם",t:"קצהו התחתון של הסולם יסתיים בגובה של 2-2.5 מ' מעל פני הקרקע. פתח הסולם יהיה נעול"}
+,{id:"31.4",ch:"פרק 31 - מפעלים לאספקת מים / מעקה",t:"גג המגדל או מפלס גבוה אחר יהיה מוקף מעקה חזק ויציב, בגובה 1.30 מ', עם אזן יד, אזן תיכון ולוח רגל"}
+,{id:"31.5",ch:"פרק 31 - מפעלים לאספקת מים / מיגון מכונות",t:"כל החלקים במנועים ובמשאבות יהיו מגודרים באופן בטיחותי"}
+,{id:"31.6",ch:"פרק 31 - מפעלים לאספקת מים / חשמל",t:"לוח החשמל יהיה בתוך מבנה או בארון סגור, לפי תקנות החשמל"}
+,{id:"31.7",ch:"פרק 31 - מפעלים לאספקת מים / גידור",t:"ברכות מים פתוחות יש לגדר בגדר גבוהה וחזקה ולשלט בשלטי אזהרה \"סכנה! הכניסה לשטח הברכה אסורה!\""}
+
+,{id:"32.1",ch:"פרק 32 - ברכות חמצון / גידור",t:"שטח הברכות יהיה מגודר, השערים יהיו נעולים, ויהיו שלטי אזהרה מתאימים מסביב לשטח הברכות"}
+,{id:"32.2",ch:"פרק 32 - ברכות חמצון / שילוט",t:"ברזי השקיה במי שופכין ישולטו בשילוט אזהרה \"מים לא לשתייה!\" בעברית, ובאזורים שמתגוררים בהם ערבים גם בערבית"}
+
+,{id:"33.1",ch:"פרק 33 - המוסך / ניהול",t:"את המוסך יפעיל עובד שהוסמך כחוק"}
+,{id:"33.2",ch:"פרק 33 - המוסך / סדר וניקיון",t:"הרצפה תהיה נקייה"}
+,{id:"33.3",ch:"פרק 33 - המוסך / כיבוי אש",t:"במוסך יהיה מטפה מסוג שייקבע על ידי רשות הכבאות"}
+,{id:"33.4",ch:"פרק 33 - המוסך / טעינת מצברים",t:"אזור טעינת המצברים ימוקם בפינה מבודדת, עם אוורור נאות. תימנע גישת תלמידים למקום ויימצא בו שילוט האוסר עישון"}
+,{id:"33.5",ch:"פרק 33 - המוסך / טעינת מצברים",t:"באזור טעינת המצברים יהיו כל הציוד והאבזרים החשמליים מסוג חסין פיצוץ"}
+
+,{id:"34.1",ch:"פרק 34 - המסגרייה / ניהול",t:"את המסגרייה יפעיל מסגר מנוסה שזהו עיסוקו העיקרי"}
+,{id:"34.2",ch:"פרק 34 - המסגרייה / ניהול",t:"עבודות הריתוך תבוצענה על ידי רתך בעל הסמכה והכשרה מתאימות"}
+,{id:"34.3",ch:"פרק 34 - המסגרייה / חשמל",t:"לכל מכונה יותקן מפסק המוזן דרך מפסק פחת"}
+,{id:"34.4",ch:"פרק 34 - המסגרייה / חשמל",t:"הכלים החשמליים יהיו תקינים ובעלי בידוד כפול"}
+,{id:"34.5",ch:"פרק 34 - המסגרייה / מכונות",t:"למקדחת עמוד ולמשחזת יהיו מגנים מתאימים. המכשירים יהיו מקובעים לרצפה כהלכה"}
+,{id:"34.6",ch:"פרק 34 - המסגרייה / מכונות",t:"מדחס ייבדק תקופתית, ויהיה בעל מגן ושילוט אזהרה על \"הפעלה אוטומטית\". אם המדחס מופעל חשמלית, הוא חייב בהארקה ובהזנה דרך ממסר פחת"}
+,{id:"34.7",ch:"פרק 34 - המסגרייה / מכונות",t:"חלקים ומכונות תלויים יהיו מאובטחים כנגד נפילתם"}
+,{id:"34.8",ch:"פרק 34 - המסגרייה / גלילי גז",t:"גלילי החמצן והאצטילן יאוחסנו כחוק"}
+
+,{id:"35.1",ch:"פרק 35 - הנגרייה / ניהול",t:"את המכונות בנגרייה יפעיל רק נגר מנוסה, שזהו עיסוקו העיקרי"}
+,{id:"35.2",ch:"פרק 35 - הנגרייה / חשמל",t:"לכל מכונה יהיה מפסק חשמלי נפרד המוזן דרך ממסר פחת"}
+,{id:"35.3",ch:"פרק 35 - הנגרייה / פינוי אבק",t:"תימצא בנגרייה מערכת ליניקת אבק אשר תהיה קרובה למקום היווצרותו"}
+,{id:"35.4",ch:"פרק 35 - הנגרייה / מיגון מכונות",t:"מסור עגול חייב מגן המצויד גם במערכת יניקת אבק ונסורת"}
+,{id:"35.5",ch:"פרק 35 - הנגרייה / מיגון מכונות",t:"במכונת ההקצעה יימצא מגן באזור המפעיל"}
+,{id:"35.6",ch:"פרק 35 - הנגרייה / מיגון מכונות",t:"במכונת כרסומת (פרייזר) יותקן מיגון כנדרש"}
+,{id:"35.7",ch:"פרק 35 - הנגרייה / מיגון מכונות",t:"במכונת ליטוש ימוגנו אזורי הלכידה בין רצועות הליטוש לבין גלגלי ההנעה והמתיחה"}
+,{id:"35.8",ch:"פרק 35 - הנגרייה / ציוד מגן אישי",t:"ציוד מגן אישי מתאים יהיה במקום וייעשה בו שימוש בהתאם לדרישות החוק"}
+,{id:"35.9",ch:"פרק 35 - הנגרייה / ציוד מגן אישי",t:"אזורים שקיים בהם רעש מזיק חייבים בסימון ובשילוט המורה על חובת הזהירות מפני מפגעי רעש"}
+,{id:"35.10",ch:"פרק 35 - הנגרייה / היערכות לחירום",t:"בנגרייה יהיה ציוד כיבוי אש מאושר מתאים להנחיות רשות הכבאות"}
+,{id:"35.11",ch:"פרק 35 - הנגרייה / היערכות לחירום",t:"המעברים הפנימיים יהיו פנויים בכל עת ליציאת חירום. בנגריה תהיה גם יציאת חירום"}
+
+,{id:"36.1",ch:"פרק 36 - דוד הקיטור / מבנה",t:"המבנה מעל הדוד חייב להיות מקורה בגג קל"}
+,{id:"36.2",ch:"פרק 36 - דוד הקיטור / מד מים",t:"על דופן הדוד יהיה מד גובה פני המים ומד לחץ עם זכוכית שקופה"}
+,{id:"36.3",ch:"פרק 36 - דוד הקיטור / בדיקות",t:"על הדוד לעבור ביקורת תקופתית על ידי בודק מוסמך"}
+,{id:"36.4",ch:"פרק 36 - דוד הקיטור / רישוי עסקים",t:"מיכל הדלק המזין את הדוד מחויב ברישוי עסקים ומותנה באישור של מפקח עבודה אזורי"}
+,{id:"36.5",ch:"פרק 36 - דוד הקיטור / רישוי עסקים",t:"במכל דלק תת-קרקעי יש להתקין צינור אוורור, ויש לגדר את אזור המכל"}
+,{id:"36.6",ch:"פרק 36 - דוד הקיטור / רישוי עסקים",t:"מתחת למכל דלק על-קרקעי יש להתקין ברכת גלישה שתכיל 110% מתכולת המכל"}
+];
+
+const LOGO_B64 = LOGO_SRC;
+document.getElementById('login-logo-img').src = LOGO_SRC;
+
+const PRESENTED_TYPES=[
+  {id:'elec_bodek',label:'בודק חשמל'},
+  {id:'elec_ciyud',label:'חשמלאי ציוד'},
+  {id:'engineer',label:'מהנדס — תקרות, מזגנים, עמודים וגידור'},
+  {id:'agronom',label:'אגרונום'},
+  {id:'fire_det',label:'גילוי אש'},
+  {id:'fire_ext',label:'כיבוי אש'}
+];
+
+const SUPABASE_URL='https://vkjtociluqnpzykufjbn.supabase.co';
+const SUPABASE_KEY='sb_publishable_bd0ReXkuglB5SV0L2R3voQ_Ae3GTn5Z';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,storage:localStorage}});
+
+const AK='safety_aid_remote';
+let inspections=[];
+let activeId=localStorage.getItem(AK)||null;
+let current=null;
+let userId=null;
+let saveTimer=null;
+let saveQueue=Promise.resolve();
+let mFinding=null,mPriority=null,mPhoto=null,mPhotoBlob=null,mPhotoPath=null,editId=null;
+
+function setSyncBadge(state){
+  const b=document.getElementById('sync-badge');if(!b)return;
+  b.className='sync-badge '+state;
+  b.innerHTML=state==='syncing'?'<span class="loader" style="width:10px;height:10px;border-width:1.5px"></span> שומר...'
+    :state==='error'?'⚠ שגיאה'
+    :'✓ מסונכרן';
+}
+
+// Serialize saves so they never overlap or race
+function enqueue(fn){
+  saveQueue=saveQueue.then(()=>fn()).catch(e=>{console.error(e);setSyncBadge('error');});
+  return saveQueue;
+}
+
+async function saveInspectionRow(o){
+  const row={
+    id:o.id,user_id:userId,name:o.name||'',code:o.code||'',type:o.type||'בית ספר',
+    street:o.street||'',auth_name:o.auth||'',date:o.date||'',inspector:o.inspector||'',
+    notes:o.notes||'',presented:o.presented||{},updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('inspections').upsert(row);
+  if(error)throw error;
+}
+
+async function loadAllInspections(){
+  setSyncBadge('syncing');
+  const {data:insp,error:e1}=await sb.from('inspections').select('*').order('updated_at',{ascending:false});
+  if(e1)throw e1;
+  const ids=insp.map(i=>i.id);
+  let hazardsByInsp={};
+  if(ids.length){
+    const {data:hz,error:e2}=await sb.from('hazards').select('*').in('inspection_id',ids);
+    if(e2)throw e2;
+    for(const h of hz){
+      if(!hazardsByInsp[h.inspection_id])hazardsByInsp[h.inspection_id]=[];
+      hazardsByInsp[h.inspection_id].push({
+        id:h.id,
+        f:h.finding_id?{id:h.finding_id,t:h.finding_text,ch:h.finding_chapter}:null,
+        p:h.priority,loc:h.location||'',notes:h.notes||'',
+        photoPath:h.photo_path||null,photo:null
+      });
+    }
+  }
+  inspections=insp.map(i=>({
+    id:i.id,name:i.name||'',code:i.code||'',type:i.type||'בית ספר',street:i.street||'',
+    auth:i.auth_name||'',date:i.date||'',inspector:i.inspector||'',notes:i.notes||'',
+    presented:i.presented||{},hazards:hazardsByInsp[i.id]||[],ts:new Date(i.updated_at).getTime()
+  }));
+  setSyncBadge('synced');
+}
+
+// Fetch signed URLs for all photos in current inspection (lazy, on demand)
+async function hydratePhotos(insp){
+  if(!insp||!insp.hazards)return;
+  const needPaths=insp.hazards.filter(h=>h.photoPath&&!h.photo).map(h=>h.photoPath);
+  if(!needPaths.length)return;
+  const {data,error}=await sb.storage.from('hazard-photos').createSignedUrls(needPaths,3600);
+  if(error){console.error(error);return;}
+  const map={};for(const d of data)map[d.path]=d.signedUrl;
+  for(const h of insp.hazards)if(h.photoPath&&map[h.photoPath])h.photo=map[h.photoPath];
+}
+
+function getI(id){return inspections.find(x=>x.id===id)}
+
+function createI(){
+  const id='i'+Date.now();
+  const o={id,name:'',code:'',type:'בית ספר',street:'',auth:'',date:new Date().toISOString().slice(0,10),inspector:'',notes:'',hazards:[],presented:{},ts:Date.now()};
+  inspections.unshift(o);
+  enqueue(async()=>{setSyncBadge('syncing');await saveInspectionRow(o);setSyncBadge('synced');});
+  return o;
+}
+
+async function loadI(id){
+  current=getI(id);activeId=id;localStorage.setItem(AK,id);
+  fillForm();updateTop();renderH();renderSum();
+  if(current){
+    await hydratePhotos(current);
+    renderH();renderSum();
+  }
+}
+
+function autoSave(){
+  if(!current)return;
+  current.name=document.getElementById('f-name').value;
+  current.code=document.getElementById('f-code').value;
+  current.type=document.getElementById('f-type').value;
+  current.street=document.getElementById('f-street').value;
+  current.auth=document.getElementById('f-auth').value;
+  current.date=document.getElementById('f-date').value;
+  current.inspector=document.getElementById('f-inspector').value;
+  current.notes=document.getElementById('f-notes').value;
+  updateTop();
+  // debounce: wait 600ms after last keystroke before saving
+  clearTimeout(saveTimer);
+  setSyncBadge('syncing');
+  const snapshot=current;
+  saveTimer=setTimeout(()=>{
+    enqueue(async()=>{await saveInspectionRow(snapshot);setSyncBadge('synced');});
+  },600);
+}
+function fillForm(){
+  if(!current)return;
+  document.getElementById('f-name').value=current.name||'';
+  document.getElementById('f-code').value=current.code||'';
+  document.getElementById('f-type').value=current.type||'בית ספר';
+  document.getElementById('f-street').value=current.street||'';
+  document.getElementById('f-auth').value=current.auth||'';
+  document.getElementById('f-date').value=current.date||'';
+  document.getElementById('f-inspector').value=current.inspector||'';
+  document.getElementById('f-notes').value=current.notes||'';
+}
+function updateTop(){
+  if(!current)return;
+  document.getElementById('topbar-title').textContent=current.name?'מבדק: '+current.name:'דוח מבדק בטיחות מוסדות חינוך';
+  document.getElementById('topbar-sub-text').textContent=(current.date||'')+' | מ.ס ארזים הנדסה';
+}
+function navTo(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='summary')renderSum();
+}
+function goToInspect(){if(!current)return;autoSave();navTo('inspect');}
+function showHistory(){
+  const el=document.getElementById('history-list');
+  el.innerHTML=inspections.length===0
+    ?'<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">אין מבדקים שמורים</div></div>'
+    :inspections.map(i=>{
+      const p0=i.hazards.filter(h=>h.p===0).length,p1=i.hazards.filter(h=>h.p===1).length,p2=i.hazards.filter(h=>h.p===2).length;
+      return '<div class="history-item" onclick="loadAndClose(\''+i.id+'\')">'
+        +'<span class="history-del" onclick="event.stopPropagation();delI(\''+i.id+'\')">🗑</span>'
+        +'<div class="history-item-title">'+( i.name||'ללא שם')+(i.id===activeId?' ✓':'')+'</div>'
+        +'<div class="history-item-sub">'+(i.date||'')+' | '+(i.auth||'')+' | '+(i.type||'')+'</div>'
+        +'<div class="history-badges"><span class="hbadge total">סה"כ '+i.hazards.length+'</span>'
+        +(p0?'<span class="hbadge p0">P0: '+p0+'</span>':'')
+        +(p1?'<span class="hbadge p1">P1: '+p1+'</span>':'')
+        +(p2?'<span class="hbadge p2">P2: '+p2+'</span>':'')
+        +'</div></div>';
+    }).join('');
+  document.getElementById('modal-history').classList.remove('hidden');
+}
+function loadAndClose(id){document.getElementById('modal-history').classList.add('hidden');loadI(id).then(()=>navTo('details'));}
+async function delI(id){
+  if(!confirm('למחוק מבדק זה? כל התמונות והמפגעים יימחקו.'))return;
+  const i=getI(id);
+  const photoPaths=i?.hazards?.filter(h=>h.photoPath).map(h=>h.photoPath)||[];
+  inspections=inspections.filter(x=>x.id!==id);
+  if(activeId===id){current=null;activeId=null;localStorage.removeItem(AK);}
+  showHistory();
+  enqueue(async()=>{
+    setSyncBadge('syncing');
+    if(photoPaths.length)await sb.storage.from('hazard-photos').remove(photoPaths);
+    const {error}=await sb.from('inspections').delete().eq('id',id);
+    if(error)throw error;
+    setSyncBadge('synced');
+  });
+}
+function newInspection(){document.getElementById('modal-history').classList.add('hidden');const i=createI();loadI(i.id).then(()=>navTo('details'));}
+function updateStats(){
+  if(!current)return;
+  document.getElementById('s0').textContent=current.hazards.filter(h=>h.p===0).length;
+  document.getElementById('s1').textContent=current.hazards.filter(h=>h.p===1).length;
+  document.getElementById('s2').textContent=current.hazards.filter(h=>h.p===2).length;
+}
+function renderH(){
+  updateStats();
+  const el=document.getElementById('hazards-list');
+  if(!current||current.hazards.length===0){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">אין מפגעים עדיין</div><div class="empty-sub">לחץ "הוסף מפגע" להתחיל</div></div>';return;}
+  el.innerHTML=[...current.hazards].sort((a,b)=>a.p-b.p).map(h=>
+    '<div class="hazard-card p'+h.p+'">'
+    +'<div class="hazard-top"><div class="hazard-badge p'+h.p+'">P'+h.p+'</div>'
+    +'<div class="hazard-body"><div class="hazard-text">'+(h.f?(h.f.id==='אחר'?'✏️ '+h.f.t:'סעיף '+h.f.id+' — '+h.f.t):'מפגע')+'</div>'
+    +'<div class="hazard-meta">'+(h.loc?'📍 '+h.loc+' · ':'')+(h.f?h.f.ch:'')+'</div>'
+    +(h.notes?'<div class="hazard-meta">📝 '+h.notes+'</div>':'')
+    +'</div>'+(h.photo?'<img src="'+h.photo+'" class="hazard-img">':'')+'</div>'
+    +'<div class="hazard-actions">'
+    +'<button class="hazard-act-btn" onclick="editH(\''+h.id+'\')">✏️ עריכה</button>'
+    +'<button class="hazard-act-btn hazard-act-del" onclick="delH(\''+h.id+'\')">🗑 מחק</button>'
+    +'</div></div>'
+  ).join('');
+}
+async function delH(id){
+  if(!confirm('למחוק?'))return;
+  const h=current.hazards.find(x=>x.id===id);
+  const photoPath=h?.photoPath;
+  current.hazards=current.hazards.filter(x=>x.id!==id);
+  renderH();
+  enqueue(async()=>{
+    setSyncBadge('syncing');
+    if(photoPath)await sb.storage.from('hazard-photos').remove([photoPath]);
+    const {error}=await sb.from('hazards').delete().eq('id',id);
+    if(error)throw error;
+    setSyncBadge('synced');
+  });
+}
+function editH(id){
+  const h=current.hazards.find(x=>x.id===id);if(!h)return;
+  editId=id;mFinding=h.f||null;mPriority=h.p;
+  mPhoto=h.photo||null;mPhotoBlob=null;mPhotoPath=h.photoPath||null;
+  openAddModal(true,h);
+}
+function openAddModal(editing=false,h=null){
+  if(!editing){editId=null;mFinding=null;mPriority=null;mPhoto=null;mPhotoBlob=null;mPhotoPath=null;}
+  document.getElementById('msearch').value='';
+  document.getElementById('results-list').innerHTML=otherItemHTML()+'<div class="no-results">הקלד מילה לחיפוש בסעיפי הרשימה המנחה</div>';
+  document.getElementById('m-loc').value=h?.loc||'';
+  document.getElementById('m-notes').value=h?.notes||'';
+  document.getElementById('photo-file').value='';
+  if(mPhoto){document.getElementById('photo-placeholder').style.display='none';document.getElementById('photo-wrap').style.display='inline-block';document.getElementById('photo-preview').src=mPhoto;}
+  else{document.getElementById('photo-placeholder').style.display='block';document.getElementById('photo-wrap').style.display='none';}
+  document.querySelectorAll('.prio-btn').forEach(b=>b.classList.remove('sel'));
+  if(mPriority!==null)document.querySelectorAll('.prio-btn')[mPriority].classList.add('sel');
+  if(editing&&mFinding){showStep(2);updSelF();}else showStep(1);
+  document.getElementById('modal-add').classList.remove('hidden');
+}
+function closeModal(){document.getElementById('modal-add').classList.add('hidden');}
+function showStep(n){document.getElementById('mstep1').style.display=n===1?'block':'none';document.getElementById('mstep2').style.display=n===2?'block':'none';}
+function step2(){if(!mFinding){alert('נא לבחור מפגע מהרשימה');return;}updSelF();showStep(2);}
+function back1(){showStep(1);}
+function updSelF(){
+  const el=document.getElementById('sel-finding-preview');
+  if(!mFinding){el.innerHTML='';return;}
+  if(mFinding.id==='אחר'){
+    el.innerHTML='<div class="sel-finding-label">✏️ מפגע מותאם אישית</div>'
+      +'<textarea class="textarea" id="m-custom-text" placeholder="תאר את המפגע בפירוט..." style="margin-top:8px;min-height:70px;background:var(--surface);border-color:var(--p1-border)">'+escHTML(mFinding.t)+'</textarea>';
+  }else{
+    el.innerHTML='<div class="sel-finding-label">סעיף '+mFinding.id+'</div><div class="sel-finding-text">'+mFinding.t+'</div>';
+  }
+}
+function escHTML(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function otherItemHTML(){
+  return '<div class="result-item other-item'+(mFinding?.id==='אחר'?' sel':'')+'" onclick="pickOther()">'
+    +'<div class="result-num">✏️ אחר — מפגע לא ברשימה</div>'
+    +'<div class="result-text">כתוב תיאור חופשי למפגע שלא מופיע ברשימה המנחה</div>'
+    +'</div>';
+}
+function doSearch(q){
+  const el=document.getElementById('results-list');
+  if(!q.trim()){el.innerHTML=otherItemHTML()+'<div class="no-results">הקלד מילה לחיפוש בסעיפי הרשימה המנחה</div>';return;}
+  const terms=q.toLowerCase().trim().split(/\s+/);
+  const res=FINDINGS.filter(f=>terms.every(t=>(f.t+' '+f.ch+' '+f.id).toLowerCase().includes(t)));
+  if(!res.length){el.innerHTML=otherItemHTML()+'<div class="no-results">לא נמצאו תוצאות עבור "'+escHTML(q)+'"</div>';return;}
+  el.innerHTML=otherItemHTML()+res.slice(0,40).map(f=>
+    '<div class="result-item'+(mFinding?.id===f.id?' sel':'')+'" onclick="pickF(\''+f.id+'\')">'
+    +'<div class="result-num">סעיף '+f.id+'</div>'
+    +'<div class="result-text">'+f.t+'</div>'
+    +'<div class="result-chapter">'+f.ch+'</div>'
+    +'</div>'
+  ).join('');
+}
+function pickF(id){mFinding=FINDINGS.find(f=>f.id===id);document.querySelectorAll('.result-item').forEach(el=>el.classList.toggle('sel',el.querySelector('.result-num')?.textContent==='סעיף '+id));}
+function pickOther(){
+  mFinding={id:'אחר',ch:'מפגע מותאם אישית',t:mFinding?.id==='אחר'?mFinding.t:''};
+  document.querySelectorAll('.result-item').forEach(el=>el.classList.remove('sel'));
+  document.querySelector('.result-item.other-item')?.classList.add('sel');
+}
+function selPrio(p){mPriority=p;document.querySelectorAll('.prio-btn').forEach(b=>b.classList.remove('sel'));document.querySelectorAll('.prio-btn')[p].classList.add('sel');}
+
+function compressImageToBlob(file,maxW,q){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*(maxW/w));w=maxW;}
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(blob=>{
+          if(!blob){reject(new Error('דחיסה נכשלה'));return;}
+          const reader=new FileReader();
+          reader.onload=ev=>resolve({blob,dataUrl:ev.target.result});
+          reader.readAsDataURL(blob);
+        },'image/jpeg',q);
+      };
+      img.onerror=()=>reject(new Error('שגיאה בטעינת התמונה'));
+      img.src=e.target.result;
+    };
+    r.onerror=()=>reject(new Error('שגיאה בקריאת הקובץ'));
+    r.readAsDataURL(file);
+  });
+}
+
+function handlePhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const placeholder=document.getElementById('photo-placeholder');
+  const origText=placeholder.textContent;
+  placeholder.textContent='⏳ מעבד תמונה...';
+  compressImageToBlob(f,1200,0.7).then(({blob,dataUrl})=>{
+    mPhoto=dataUrl;mPhotoBlob=blob;
+    placeholder.style.display='none';
+    document.getElementById('photo-wrap').style.display='inline-block';
+    document.getElementById('photo-preview').src=mPhoto;
+    placeholder.textContent=origText;
+  }).catch(err=>{
+    placeholder.textContent=origText;
+    alert('שגיאה: '+err.message);
+  });
+}
+function removePhoto(e){
+  e.stopPropagation();
+  mPhoto=null;mPhotoBlob=null;
+  // mark existing photo for deletion by remembering old path but blanking out mPhoto
+  document.getElementById('photo-placeholder').style.display='block';
+  document.getElementById('photo-wrap').style.display='none';
+  document.getElementById('photo-file').value='';
+}
+
+async function uploadPhotoBlob(blob,hazardId){
+  const path=userId+'/'+hazardId+'.jpg';
+  const {error}=await sb.storage.from('hazard-photos').upload(path,blob,{contentType:'image/jpeg',upsert:true});
+  if(error)throw error;
+  return path;
+}
+
+async function saveHazard(){
+  if(mPriority===null){alert('נא לבחור קדימות');return;}
+  if(!current)return;
+  // For custom "אחר" hazards, grab the user's typed description
+  if(mFinding?.id==='אחר'){
+    const customText=(document.getElementById('m-custom-text')?.value||'').trim();
+    if(!customText){alert('נא לכתוב תיאור למפגע המותאם אישית');return;}
+    mFinding={id:'אחר',ch:'מפגע מותאם אישית',t:customText};
+  }
+  const hazardId=editId||('h'+Date.now());
+  const isNew=!editId;
+  // local object update first for instant UI feedback
+  let h;
+  if(editId){
+    h=current.hazards.find(x=>x.id===editId);
+    if(!h){alert('לא נמצא המפגע');return;}
+  }else{
+    h={id:hazardId,f:null,p:0,loc:'',notes:'',photo:null,photoPath:null};
+    current.hazards.push(h);
+  }
+  const oldPhotoPath=h.photoPath||null;
+  h.f=mFinding;h.p=mPriority;
+  h.loc=document.getElementById('m-loc').value;
+  h.notes=document.getElementById('m-notes').value;
+  if(mPhotoBlob){h.photo=mPhoto;}
+  else if(!mPhoto){h.photo=null;h.photoPath=null;}
+  closeModal();renderH();
+
+  // queue remote save
+  enqueue(async()=>{
+    setSyncBadge('syncing');
+    let newPhotoPath=h.photoPath;
+    if(mPhotoBlob){
+      newPhotoPath=await uploadPhotoBlob(mPhotoBlob,hazardId);
+      h.photoPath=newPhotoPath;
+      // delete old photo if this is a replacement
+      if(oldPhotoPath&&oldPhotoPath!==newPhotoPath){
+        await sb.storage.from('hazard-photos').remove([oldPhotoPath]).catch(()=>{});
+      }
+    }else if(!mPhoto&&oldPhotoPath){
+      // user removed photo
+      await sb.storage.from('hazard-photos').remove([oldPhotoPath]).catch(()=>{});
+      h.photoPath=null;newPhotoPath=null;
+    }
+    const row={
+      id:hazardId,inspection_id:current.id,user_id:userId,
+      finding_id:h.f?.id||null,finding_text:h.f?.t||null,finding_chapter:h.f?.ch||null,
+      priority:h.p,location:h.loc,notes:h.notes,photo_path:newPhotoPath
+    };
+    const {error}=await sb.from('hazards').upsert(row);
+    if(error)throw error;
+    setSyncBadge('synced');
+  });
+}
+
+function togPresented(id,v){
+  if(!current)return;
+  if(!current.presented)current.presented={};
+  current.presented[id]=current.presented[id]===v?null:v;
+  renderPresented();
+  const snapshot=current;
+  enqueue(async()=>{setSyncBadge('syncing');await saveInspectionRow(snapshot);setSyncBadge('synced');});
+}
+
+function renderPriorityGroup(hazards, p, label, color) {
+  const group = hazards.filter(h=>h.p===p);
+  if(!group.length) return '';
+  return '<div class="prio-section-title p'+p+'">'+label+' — '+group.length+' ממצאים</div>'
+    + group.map(h=>
+      '<div class="hazard-card p'+h.p+'">'
+      +'<div class="hazard-top"><div class="hazard-badge p'+h.p+'">P'+h.p+'</div>'
+      +'<div class="hazard-body"><div class="hazard-text">'+(h.f?(h.f.id==='אחר'?'✏️ '+h.f.t:'סעיף '+h.f.id+' — '+h.f.t):'מפגע')+'</div>'
+      +'<div class="hazard-meta">'+(h.loc?'📍 '+h.loc+' · ':'')+(h.f?h.f.ch:'')+'</div>'
+      +(h.notes?'<div class="hazard-meta">📝 '+h.notes+'</div>':'')
+      +'</div>'+(h.photo?'<img src="'+h.photo+'" class="hazard-img">':'')+'</div>'
+      +'</div>'
+    ).join('');
+}
+
+function renderPresented(){
+  if(!current)return;
+  if(!current.presented)current.presented={};
+  const el=document.getElementById('presented-list');
+  if(!el)return;
+  el.innerHTML=PRESENTED_TYPES.map(t=>{
+    const v=current.presented[t.id];
+    return '<div class="pres-row">'
+      +'<div class="pres-label">'+t.label+'</div>'
+      +'<div class="pres-btns">'
+      +'<button class="pres-btn yes'+(v==='yes'?' sel':'')+'" onclick="togPresented(\''+t.id+'\',\'yes\')">✓ הוצג</button>'
+      +'<button class="pres-btn no'+(v==='no'?' sel':'')+'" onclick="togPresented(\''+t.id+'\',\'no\')">✗ לא הוצג</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function renderSum(){
+  if(!current)return;
+  const p0=current.hazards.filter(h=>h.p===0).length,p1=current.hazards.filter(h=>h.p===1).length,p2=current.hazards.filter(h=>h.p===2).length;
+  document.getElementById('summary-header-card').innerHTML=
+    '<div class="card-header">📊 סיכום מבדק</div>'
+    +'<div style="font-size:13px;color:var(--text2);margin-bottom:14px"><strong style="color:var(--text)">'+current.name+'</strong> | '+current.type+' | '+current.auth+'<br>'+(current.street?current.street+' | ':'')+'תאריך: '+current.date+' | עורך: '+current.inspector+'</div>'
+    +'<div class="stats-row">'
+    +'<div class="stat-box"><div class="stat-num" style="color:var(--p0)">'+p0+'</div><div class="stat-lbl">קדימות 0</div></div>'
+    +'<div class="stat-box"><div class="stat-num" style="color:var(--p1)">'+p1+'</div><div class="stat-lbl">קדימות 1</div></div>'
+    +'<div class="stat-box"><div class="stat-num" style="color:var(--p2)">'+p2+'</div><div class="stat-lbl">קדימות 2</div></div>'
+    +'</div>';
+  const el=document.getElementById('summary-hazards-list');
+  if(current.hazards.length===0){
+    el.innerHTML='<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">לא נמצאו מפגעים</div></div>';
+    renderPresented();
+    return;
+  }
+  el.innerHTML=
+    renderPriorityGroup(current.hazards,0,'🔴 קדימות 0 — סגירה מידית')
+    +renderPriorityGroup(current.hazards,1,'🟠 קדימות 1 — הסרה מידית')
+    +renderPriorityGroup(current.hazards,2,'🔵 קדימות 2 — תוכנית טיפול');
+  renderPresented();
+}
+
+function printReport(){
+  if(!current)return;autoSave();
+  const i=current;
+  const p0=i.hazards.filter(h=>h.p===0),p1=i.hazards.filter(h=>h.p===1),p2=i.hazards.filter(h=>h.p===2);
+  
+  function hazardBlock(h,idx){
+    return '<div class="pdoc-hazard p'+h.p+'">'
+      +'<div class="pdoc-hrow">'
+      +'<div class="pdoc-badge p'+h.p+'">קד\' '+h.p+'</div>'
+      +'<div class="pdoc-hbody">'
+      +'<div style="font-size:10px;color:#888;margin-bottom:2px">#'+(idx+1)+(h.f?(h.f.id==='אחר'?' | ✏️ מפגע מותאם אישית':' | סעיף '+h.f.id+' | '+h.f.ch):'')+'</div>'
+      +'<div class="pdoc-htext">'+(h.f?h.f.t:'מפגע')+'</div>'
+      +(h.loc?'<div class="pdoc-hmeta">📍 מיקום: '+h.loc+'</div>':'')
+      +(h.notes?'<div class="pdoc-hmeta">📝 '+h.notes+'</div>':'')
+      +'</div>'+(h.photo?'<img src="'+h.photo+'" class="pdoc-himg">':'')
+      +'</div></div>';
+  }
+  
+  function prioSection(hazards,p,label){
+    if(!hazards.length)return '';
+    return '<div class="pdoc-prio-header p'+p+'">'+label+' ('+hazards.length+' ממצאים)</div>'
+      +hazards.map((h,idx)=>hazardBlock(h,idx)).join('');
+  }
+
+  const presented=i.presented||{};
+  const presentedRows=PRESENTED_TYPES.map(t=>{
+    const v=presented[t.id];
+    const status=v==='yes'?'<span class="pdoc-pres-yes">✓ הוצג</span>'
+      :v==='no'?'<span class="pdoc-pres-no">✗ לא הוצג</span>'
+      :'<span class="pdoc-pres-none">— לא צוין</span>';
+    return '<tr><td>'+t.label+'</td><td style="text-align:left">'+status+'</td></tr>';
+  }).join('');
+  const presentedSection='<div class="pdoc-section"><div class="pdoc-section-title">בדיקות שהוצגו במבדק</div><table class="pdoc-pres-table">'+presentedRows+'</table></div>';
+
+  document.getElementById('print-doc').innerHTML=
+    '<div class="pdoc">'
+    +'<div class="pdoc-header">'
+    +'<img class="pdoc-header-logo" src="'+LOGO_B64+'" alt="לוגו">'
+    +'<div class="pdoc-header-text">'
+    +'<h1>דוח מבדק בטיחות מוסדות חינוך</h1>'
+    +'<p>מ.ס ארזים הנדסה בע"מ | רשימה מנחה מעודכנת ספטמבר 2025</p>'
+    +'</div></div>'
+    +'<div class="pdoc-section"><div class="pdoc-section-title">פרטי המוסד</div>'
+    +'<div class="pdoc-info-grid">'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">שם המוסד: </span>'+(i.name||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">סמל מוסד: </span>'+(i.code||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">סוג מוסד: </span>'+(i.type||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">שם הרשות: </span>'+(i.auth||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">כתובת: </span>'+(i.street||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">תאריך מבדק: </span>'+(i.date||'-')+'</div>'
+    +'<div class="pdoc-info-item"><span class="pdoc-info-label">עורך המבדק: </span>'+(i.inspector||'-')+'</div>'
+    +'</div></div>'
+    +'<div class="pdoc-stats">'
+    +'<div class="pdoc-stat s0"><span class="n">'+p0.length+'</span><span class="l">קדימות 0<br>סגירה מידית</span></div>'
+    +'<div class="pdoc-stat s1"><span class="n">'+p1.length+'</span><span class="l">קדימות 1<br>הסרה מידית</span></div>'
+    +'<div class="pdoc-stat s2"><span class="n">'+p2.length+'</span><span class="l">קדימות 2<br>תוכנית טיפול</span></div>'
+    +'<div class="pdoc-stat st"><span class="n">'+i.hazards.length+'</span><span class="l">סה"כ<br>מפגעים</span></div>'
+    +'</div>'
+    +presentedSection
+    +'<div class="pdoc-section"><div class="pdoc-section-title">ממצאי המבדק</div>'
+    +(i.hazards.length===0
+      ?'<div style="text-align:center;padding:20px;background:#f0fdf4;border-radius:8px;color:#16a34a;font-weight:700">לא נמצאו מפגעים - המוסד עמד בבדיקה</div>'
+      :prioSection(p0,0,'🔴 קדימות 0 — סגירה מידית וטיפול דחוף')
+      +prioSection(p1,1,'🟠 קדימות 1 — הסרת המפגע מיידית')
+      +prioSection(p2,2,'🔵 קדימות 2 — תוכנית עבודה סדורה ברשות המקומית')
+    )+'</div>'
+    +(i.notes?'<div class="pdoc-section"><div class="pdoc-section-title">הערות כלליות</div><div class="pdoc-notes-box">'+i.notes+'</div></div>':'')
+    +'<div class="pdoc-footer">תאריך הפקה: '+new Date().toLocaleDateString('he-IL')+' | עורך המבדק: '+(i.inspector||'-')+'</div>'
+    +'<div class="pdoc-company">דוח זה הופק ע"י חברת מ.ס ארזים הנדסה בע"מ</div>'
+    +'</div>';
+  window.print();
+}
+
+function showLoginScreen(msg){
+  document.getElementById('boot-loader').style.display='none';
+  document.getElementById('app-main').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  const err=document.getElementById('login-error');
+  if(msg){err.textContent=msg;err.classList.add('show');}
+  else{err.classList.remove('show');}
+}
+
+function showAppLoader(){
+  document.getElementById('boot-loader').style.display='flex';
+  document.getElementById('app-main').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+}
+
+function showApp(){
+  document.getElementById('boot-loader').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-main').style.display='flex';
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const btn=document.getElementById('login-btn');
+  const err=document.getElementById('login-error');
+  err.classList.remove('show');
+  if(!email||!password){err.textContent='יש למלא אימייל וסיסמה';err.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='מתחבר...';
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  btn.disabled=false;btn.textContent='התחבר';
+  if(error){
+    const msg=error.message==='Invalid login credentials'?'אימייל או סיסמה שגויים':error.message;
+    err.textContent=msg;err.classList.add('show');
+    return;
+  }
+  await bootAfterAuth(data.user);
+}
+
+async function doLogout(){
+  if(!confirm('להתנתק?'))return;
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function openPwdModal(){
+  document.getElementById('pwd-new').value='';
+  document.getElementById('pwd-new2').value='';
+  document.getElementById('pwd-error').classList.remove('show');
+  document.getElementById('modal-pwd').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pwd-new').focus(),100);
+}
+function closePwdModal(){document.getElementById('modal-pwd').classList.add('hidden');}
+async function doChangePwd(){
+  const p1=document.getElementById('pwd-new').value;
+  const p2=document.getElementById('pwd-new2').value;
+  const err=document.getElementById('pwd-error');
+  const btn=document.getElementById('pwd-submit');
+  err.classList.remove('show');
+  if(p1.length<6){err.textContent='הסיסמה חייבת להיות לפחות 6 תווים';err.classList.add('show');return;}
+  if(p1!==p2){err.textContent='הסיסמאות לא תואמות';err.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='משנה...';
+  const {error}=await sb.auth.updateUser({password:p1});
+  btn.disabled=false;btn.textContent='שנה סיסמה';
+  if(error){err.textContent='שגיאה: '+error.message;err.classList.add('show');return;}
+  closePwdModal();
+  alert('✓ הסיסמה שונתה בהצלחה');
+}
+
+async function bootAfterAuth(user){
+  userId=user.id;
+  showAppLoader();
+  try{
+    await loadAllInspections();
+    showApp();
+    document.getElementById('login-email').value='';
+    document.getElementById('login-password').value='';
+    // pick initial inspection
+    if(activeId&&getI(activeId))await loadI(activeId);
+    else if(inspections.length>0)await loadI(inspections[0].id);
+    else{const i=createI();await loadI(i.id);}
+    document.getElementById('modal-add').addEventListener('click',e=>{if(e.target===document.getElementById('modal-add'))closeModal();});
+    document.getElementById('modal-history').addEventListener('click',e=>{if(e.target===document.getElementById('modal-history'))document.getElementById('modal-history').classList.add('hidden');});
+    document.getElementById('modal-pwd').addEventListener('click',e=>{if(e.target===document.getElementById('modal-pwd'))closePwdModal();});
+  }catch(e){
+    console.error(e);
+    alert('שגיאה בטעינת הנתונים: '+(e.message||e));
+    showLoginScreen('שגיאה בטעינה - נסה שוב');
+    await sb.auth.signOut();
+  }
+}
+
+async function init(){
+  // enter-to-submit on login fields
+  ['login-email','login-password'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  });
+  const {data:{session}}=await sb.auth.getSession();
+  if(session&&session.user){
+    await bootAfterAuth(session.user);
+  }else{
+    showLoginScreen();
+  }
+}
+init();
+</script></body></html>
